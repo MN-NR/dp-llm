@@ -1,0 +1,86 @@
+{
+  "model_key": "gemma_2b_it",
+  "checkpoint": "checkpoints/gemma_2b_it/dp_eps3.0/final",
+  "device": "cuda",
+  "evaluations": [
+    {
+      "dataset": "test",
+      "num_samples": 3000,
+      "avg_loss": 0.3062863970358546,
+      "group_losses": {
+        "A": 0.2834896614686586,
+        "B": 0.35187986817024647
+      },
+      "task_losses": {
+        "classification": 0.3153767007254064,
+        "pii_detection": 0.35187986817024647,
+        "nli": 0.25160262221191076
+      },
+      "metrics": {
+        "classification": {
+          "accuracy": 0.793,
+          "n_samples": 1000
+        },
+        "nli": {
+          "accuracy": 0.713,
+          "n_samples": 1000
+        },
+        "pii_detection": {
+          "precision": 0.7464,
+          "recall": 0.7005,
+          "f1": 0.7227,
+          "exact_match": 0.481,
+          "n_samples": 1000,
+          "relaxed_precision": 0.8291,
+          "relaxed_recall": 0.7781,
+          "relaxed_f1": 0.8028,
+          "relaxed_exact_match": 0.481
+        }
+      },
+      "metrics_num_samples": 3000,
+      "samples": [
+        {
+          "group": "A",
+          "task": "classification",
+          "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Aether Declines Higher Bid for Unit (washingtonpost.com) washingtonpost.com - Aether Systems Inc., a Maryland wireless data company that is selling off its operating units, said yesterday it received a #36;30 million offer for a division it had already agreed to sell to another buyer for #36;25 million.\nLabel:",
+          "target": "Sci/Tech",
+          "generated": "Business"
+        },
+        {
+          "group": "A",
+          "task": "classification",
+          "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Pioneer replaces plasma TV power supplies Certain Pioneer TVs have a faulty power supply. An upgrade is available.\nLabel:",
+          "target": "Sci/Tech",
+          "generated": "Sci/Tech"
+        },
+        {
+          "group": "A",
+          "task": "nli",
+          "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: Oh, I I haven't quite worked that out.\nHypothesis: I haven't put that together yet.\nLabel:",
+          "target": "entailment",
+          "generated": "neutral"
+        },
+        {
+          "group": "A",
+          "task": "classification",
+          "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Bombs kill 35 children in Iraq Three bombs exploded at a neighborhood celebration today in western Baghdad, killing 35 children and seven adults, officials said.\nLabel:",
+          "target": "World",
+          "generated": "World"
+        },
+        {
+          "group": "A",
+          "task": "classification",
+          "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: ICC probe clears Zimbabwe of racism in cricket LAHORE, Pakistan (AFP) - The International Cricket Council said yesterday a probe had found no evidence of racism in Zimbabwe cricket and that the Test status of the country #39;s team was never in question.\nLabel:",
+          "target": "Sports",
+          "generated": "World"
+        }
+      ],
+      "eval_modes": {
+        "classification": "loss_based_label_scoring",
+        "nli": "loss_based_label_scoring",
+        "open_output_tasks": "greedy_generation",
+        "attack_eval": "loss_only"
+      }
+    }
+  ]
+}

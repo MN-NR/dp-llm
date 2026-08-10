@@ -1,0 +1,16 @@
+W5 interpretation (matched current test set)
+
+                                   mean     min     max
+metric                                                 
+metrics.classification.accuracy +0.0880 -0.0500 +0.3950
+metrics.nli.accuracy            +0.0363 -0.0610 +0.1030
+metrics.pii_detection.f1        +0.2675 +0.0670 +0.5681
+
+Model-level task deltas:
+- gemma3_1b: classification -0.0500; NLI -0.0610; PII F1 +0.2690
+- gemma_2b_it: classification +0.0100; NLI +0.1030; PII F1 +0.0670
+- llama3_2_1b_it: classification +0.3950; NLI +0.0940; PII F1 +0.5681
+- vault_gemma: classification -0.0031; NLI +0.0092; PII F1 +0.1659
+
+Suggested rebuttal text:
+At ε=3, DP finetuning does not yield a uniform utility improvement over the unadapted base model. The effect is model- and task-dependent: general classification/NLI changes range from degradation to moderate improvement, whereas PII detection improves for every model. Thus, when downstream gains are small, practitioners should weigh whether the privacy benefit justifies adaptation; however, the consistently positive PII-specific gains show that low-ε finetuning can still be useful for the target instruction-recall task.

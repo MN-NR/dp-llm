@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v python >/dev/null 2>&1; then
+  echo "error: python not found on PATH" >&2
+  exit 127
+fi
+
+if ! python -c "import lm_eval" >/dev/null 2>&1; then
+  echo "error: lm-evaluation-harness is not installed in this environment." >&2
+  echo "install: pip install -U lm-eval" >&2
+  exit 1
+fi
+
+exec python -m lm_eval "$@"

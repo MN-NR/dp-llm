@@ -1,0 +1,69 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+
+# Virtual environments and local Python tooling
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local Codex/editor metadata
+.codex
+
+# Environment and secrets
+.env
+.env.*
+*.local
+
+# Backup / scratch files
+*.bak
+.ipynb_checkpoints/
+
+# Ignore vendored or local dependency copies that should not be staged
+opacus/
+opacus*/
+**/opacus/
+**/opacus*/
+
+# Logs and runtime outputs
+*.log
+
+# Training outputs and model artifacts
+checkpoints/
+finetune/checkpoints/
+*.safetensors
+
+# Evaluation/result dumps
+/results/
+results_finetuning/
+results_testing/*.json
+results_testing/results_v1/
+v1_results/
+
+# Generated datasets and audit artifacts
+data_prep/Dataset/
+data_prep/data/audit/
+data_prep_invalid/
+instruction_recall_dataset/dataset/
+enron_data/processed/
+
+# Large local data files
+data/**/*.xlsx
+data/**/*.csv
+data/**/*.jsonl
+data/**/*.arrow

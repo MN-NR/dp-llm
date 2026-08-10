@@ -1,0 +1,2407 @@
+{
+  "member_losses": [
+    {
+      "id": "canary_member_0",
+      "canary": true,
+      "loss": 8.114206314086914,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_1",
+      "canary": true,
+      "loss": 9.398608207702637,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_2",
+      "canary": true,
+      "loss": 9.783262252807617,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_3",
+      "canary": true,
+      "loss": 8.969376564025879,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_4",
+      "canary": true,
+      "loss": 8.26343822479248,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_5",
+      "canary": true,
+      "loss": 7.861461162567139,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_6",
+      "canary": true,
+      "loss": 10.191081047058105,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_7",
+      "canary": true,
+      "loss": 9.618762016296387,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_8",
+      "canary": true,
+      "loss": 12.066866874694824,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_9",
+      "canary": true,
+      "loss": 9.188645362854004,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_10",
+      "canary": true,
+      "loss": 9.241742134094238,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_11",
+      "canary": true,
+      "loss": 8.822183609008789,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_12",
+      "canary": true,
+      "loss": 8.54161262512207,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_13",
+      "canary": true,
+      "loss": 9.007559776306152,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_14",
+      "canary": true,
+      "loss": 7.334343910217285,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_15",
+      "canary": true,
+      "loss": 9.37338638305664,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_16",
+      "canary": true,
+      "loss": 8.300131797790527,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_17",
+      "canary": true,
+      "loss": 8.23721981048584,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_18",
+      "canary": true,
+      "loss": 7.6593732833862305,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_19",
+      "canary": true,
+      "loss": 8.012596130371094,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_20",
+      "canary": true,
+      "loss": 8.781654357910156,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_21",
+      "canary": true,
+      "loss": 9.510038375854492,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_22",
+      "canary": true,
+      "loss": 8.601411819458008,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_23",
+      "canary": true,
+      "loss": 8.558477401733398,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_24",
+      "canary": true,
+      "loss": 8.448238372802734,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_25",
+      "canary": true,
+      "loss": 9.217245101928711,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_26",
+      "canary": true,
+      "loss": 8.211285591125488,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_27",
+      "canary": true,
+      "loss": 8.364814758300781,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_28",
+      "canary": true,
+      "loss": 7.736772537231445,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_29",
+      "canary": true,
+      "loss": 8.467972755432129,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_30",
+      "canary": true,
+      "loss": 8.088784217834473,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_31",
+      "canary": true,
+      "loss": 8.588013648986816,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_32",
+      "canary": true,
+      "loss": 8.879104614257812,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_33",
+      "canary": true,
+      "loss": 8.409831047058105,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_34",
+      "canary": true,
+      "loss": 9.412398338317871,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_35",
+      "canary": true,
+      "loss": 8.631426811218262,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_36",
+      "canary": true,
+      "loss": 8.415748596191406,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_37",
+      "canary": true,
+      "loss": 8.406787872314453,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_38",
+      "canary": true,
+      "loss": 8.435808181762695,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_39",
+      "canary": true,
+      "loss": 9.368647575378418,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_40",
+      "canary": true,
+      "loss": 8.67825698852539,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_41",
+      "canary": true,
+      "loss": 8.934111595153809,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_42",
+      "canary": true,
+      "loss": 7.881972789764404,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_43",
+      "canary": true,
+      "loss": 8.546785354614258,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_44",
+      "canary": true,
+      "loss": 9.8662109375,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_45",
+      "canary": true,
+      "loss": 8.900525093078613,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_46",
+      "canary": true,
+      "loss": 9.712902069091797,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_47",
+      "canary": true,
+      "loss": 8.325331687927246,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_48",
+      "canary": true,
+      "loss": 7.941562175750732,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_49",
+      "canary": true,
+      "loss": 8.958234786987305,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_50",
+      "canary": true,
+      "loss": 8.221657752990723,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_51",
+      "canary": true,
+      "loss": 8.46500015258789,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_52",
+      "canary": true,
+      "loss": 10.131800651550293,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_53",
+      "canary": true,
+      "loss": 9.62973690032959,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_54",
+      "canary": true,
+      "loss": 8.974016189575195,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_55",
+      "canary": true,
+      "loss": 8.626632690429688,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_56",
+      "canary": true,
+      "loss": 8.171881675720215,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_57",
+      "canary": true,
+      "loss": 8.308631896972656,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_58",
+      "canary": true,
+      "loss": 9.118852615356445,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_59",
+      "canary": true,
+      "loss": 11.040200233459473,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_60",
+      "canary": true,
+      "loss": 8.033785820007324,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_61",
+      "canary": true,
+      "loss": 8.107157707214355,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_62",
+      "canary": true,
+      "loss": 11.999755859375,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_63",
+      "canary": true,
+      "loss": 8.043704986572266,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_64",
+      "canary": true,
+      "loss": 7.896457195281982,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_65",
+      "canary": true,
+      "loss": 8.493840217590332,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_66",
+      "canary": true,
+      "loss": 7.9283576011657715,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_67",
+      "canary": true,
+      "loss": 8.442545890808105,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_68",
+      "canary": true,
+      "loss": 8.992112159729004,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_69",
+      "canary": true,
+      "loss": 7.80865478515625,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_70",
+      "canary": true,
+      "loss": 9.199210166931152,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_71",
+      "canary": true,
+      "loss": 9.06436824798584,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_72",
+      "canary": true,
+      "loss": 10.782035827636719,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_73",
+      "canary": true,
+      "loss": 8.07925796508789,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_74",
+      "canary": true,
+      "loss": 8.2594633102417,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_75",
+      "canary": true,
+      "loss": 8.599862098693848,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_76",
+      "canary": true,
+      "loss": 11.266819953918457,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_77",
+      "canary": true,
+      "loss": 10.007195472717285,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_78",
+      "canary": true,
+      "loss": 10.138541221618652,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_79",
+      "canary": true,
+      "loss": 8.675702095031738,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_80",
+      "canary": true,
+      "loss": 7.920402526855469,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_81",
+      "canary": true,
+      "loss": 8.354366302490234,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_82",
+      "canary": true,
+      "loss": 8.295918464660645,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_83",
+      "canary": true,
+      "loss": 9.80230712890625,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_84",
+      "canary": true,
+      "loss": 9.69491195678711,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_85",
+      "canary": true,
+      "loss": 9.930818557739258,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_86",
+      "canary": true,
+      "loss": 8.69579029083252,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_87",
+      "canary": true,
+      "loss": 7.978227138519287,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_88",
+      "canary": true,
+      "loss": 8.205435752868652,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_89",
+      "canary": true,
+      "loss": 8.336043357849121,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_90",
+      "canary": true,
+      "loss": 8.335862159729004,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_91",
+      "canary": true,
+      "loss": 8.456719398498535,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_92",
+      "canary": true,
+      "loss": 9.728839874267578,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_93",
+      "canary": true,
+      "loss": 9.415204048156738,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_94",
+      "canary": true,
+      "loss": 8.707525253295898,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_95",
+      "canary": true,
+      "loss": 7.669384002685547,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_96",
+      "canary": true,
+      "loss": 8.546544075012207,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_97",
+      "canary": true,
+      "loss": 8.111043930053711,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_98",
+      "canary": true,
+      "loss": 10.207551002502441,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_99",
+      "canary": true,
+      "loss": 9.68263053894043,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_100",
+      "canary": true,
+      "loss": 9.311758041381836,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_101",
+      "canary": true,
+      "loss": 8.235477447509766,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_102",
+      "canary": true,
+      "loss": 9.391610145568848,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_103",
+      "canary": true,
+      "loss": 8.173188209533691,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_104",
+      "canary": true,
+      "loss": 8.54994010925293,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_105",
+      "canary": true,
+      "loss": 8.469917297363281,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_106",
+      "canary": true,
+      "loss": 8.564879417419434,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_107",
+      "canary": true,
+      "loss": 9.363877296447754,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_108",
+      "canary": true,
+      "loss": 9.163008689880371,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_109",
+      "canary": true,
+      "loss": 8.045294761657715,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_110",
+      "canary": true,
+      "loss": 9.209266662597656,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_111",
+      "canary": true,
+      "loss": 8.13746166229248,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_112",
+      "canary": true,
+      "loss": 7.980169296264648,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_113",
+      "canary": true,
+      "loss": 9.480423927307129,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_114",
+      "canary": true,
+      "loss": 10.075263977050781,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_115",
+      "canary": true,
+      "loss": 9.613462448120117,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_116",
+      "canary": true,
+      "loss": 8.795931816101074,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_117",
+      "canary": true,
+      "loss": 8.567550659179688,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_118",
+      "canary": true,
+      "loss": 8.327434539794922,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_119",
+      "canary": true,
+      "loss": 9.811151504516602,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_120",
+      "canary": true,
+      "loss": 8.127602577209473,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_121",
+      "canary": true,
+      "loss": 8.292518615722656,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_122",
+      "canary": true,
+      "loss": 9.00948715209961,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_123",
+      "canary": true,
+      "loss": 8.172971725463867,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_124",
+      "canary": true,
+      "loss": 8.348899841308594,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_125",
+      "canary": true,
+      "loss": 8.317298889160156,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_126",
+      "canary": true,
+      "loss": 7.614535808563232,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_127",
+      "canary": true,
+      "loss": 8.70828628540039,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_128",
+      "canary": true,
+      "loss": 8.363090515136719,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_129",
+      "canary": true,
+      "loss": 9.736653327941895,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_130",
+      "canary": true,
+      "loss": 9.02202033996582,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_131",
+      "canary": true,
+      "loss": 8.369717597961426,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_132",
+      "canary": true,
+      "loss": 8.21860122680664,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_133",
+      "canary": true,
+      "loss": 8.925962448120117,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_134",
+      "canary": true,
+      "loss": 10.388399124145508,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_135",
+      "canary": true,
+      "loss": 8.586933135986328,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_136",
+      "canary": true,
+      "loss": 9.596532821655273,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_137",
+      "canary": true,
+      "loss": 9.247962951660156,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_138",
+      "canary": true,
+      "loss": 9.829240798950195,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_139",
+      "canary": true,
+      "loss": 8.354471206665039,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_140",
+      "canary": true,
+      "loss": 9.128508567810059,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_141",
+      "canary": true,
+      "loss": 9.86032485961914,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_142",
+      "canary": true,
+      "loss": 9.26535415649414,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_143",
+      "canary": true,
+      "loss": 7.797582149505615,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_144",
+      "canary": true,
+      "loss": 8.676925659179688,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_145",
+      "canary": true,
+      "loss": 8.14638900756836,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_146",
+      "canary": true,
+      "loss": 8.261983871459961,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_147",
+      "canary": true,
+      "loss": 9.583098411560059,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_148",
+      "canary": true,
+      "loss": 8.210558891296387,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_149",
+      "canary": true,
+      "loss": 8.00143051147461,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_150",
+      "canary": true,
+      "loss": 8.109380722045898,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_151",
+      "canary": true,
+      "loss": 8.441510200500488,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_152",
+      "canary": true,
+      "loss": 9.599907875061035,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_153",
+      "canary": true,
+      "loss": 9.290404319763184,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_154",
+      "canary": true,
+      "loss": 8.410088539123535,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_155",
+      "canary": true,
+      "loss": 8.15175724029541,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_156",
+      "canary": true,
+      "loss": 7.877724647521973,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_157",
+      "canary": true,
+      "loss": 8.23415470123291,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_158",
+      "canary": true,
+      "loss": 9.118406295776367,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_159",
+      "canary": true,
+      "loss": 8.26880931854248,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_160",
+      "canary": true,
+      "loss": 8.515594482421875,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_161",
+      "canary": true,
+      "loss": 7.859796047210693,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_162",
+      "canary": true,
+      "loss": 8.182494163513184,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_163",
+      "canary": true,
+      "loss": 8.254720687866211,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_164",
+      "canary": true,
+      "loss": 11.800453186035156,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_165",
+      "canary": true,
+      "loss": 9.38131046295166,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_166",
+      "canary": true,
+      "loss": 9.191008567810059,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_167",
+      "canary": true,
+      "loss": 10.00207805633545,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_168",
+      "canary": true,
+      "loss": 8.185550689697266,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_169",
+      "canary": true,
+      "loss": 8.10243034362793,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_170",
+      "canary": true,
+      "loss": 8.483388900756836,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_171",
+      "canary": true,
+      "loss": 8.1701078414917,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_172",
+      "canary": true,
+      "loss": 8.365753173828125,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_173",
+      "canary": true,
+      "loss": 8.304120063781738,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_174",
+      "canary": true,
+      "loss": 9.979300498962402,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_175",
+      "canary": true,
+      "loss": 8.578930854797363,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_176",
+      "canary": true,
+      "loss": 9.999032974243164,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_177",
+      "canary": true,
+      "loss": 8.647489547729492,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_178",
+      "canary": true,
+      "loss": 10.265861511230469,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_179",
+      "canary": true,
+      "loss": 8.218487739562988,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_180",
+      "canary": true,
+      "loss": 8.403093338012695,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_181",
+      "canary": true,
+      "loss": 8.967464447021484,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_182",
+      "canary": true,
+      "loss": 9.007086753845215,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_183",
+      "canary": true,
+      "loss": 8.193523406982422,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_184",
+      "canary": true,
+      "loss": 8.21915340423584,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_185",
+      "canary": true,
+      "loss": 8.497696876525879,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_186",
+      "canary": true,
+      "loss": 9.979273796081543,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_187",
+      "canary": true,
+      "loss": 8.661276817321777,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_188",
+      "canary": true,
+      "loss": 7.965937614440918,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_189",
+      "canary": true,
+      "loss": 8.621508598327637,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_190",
+      "canary": true,
+      "loss": 8.255131721496582,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_191",
+      "canary": true,
+      "loss": 8.206048965454102,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_192",
+      "canary": true,
+      "loss": 8.733853340148926,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_193",
+      "canary": true,
+      "loss": 9.61426067352295,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_194",
+      "canary": true,
+      "loss": 9.956789016723633,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_195",
+      "canary": true,
+      "loss": 7.5123443603515625,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_196",
+      "canary": true,
+      "loss": 8.003506660461426,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_197",
+      "canary": true,
+      "loss": 8.65493106842041,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_198",
+      "canary": true,
+      "loss": 9.308222770690918,
+      "source": "canary"
+    },
+    {
+      "id": "canary_member_199",
+      "canary": true,
+      "loss": 8.543221473693848,
+      "source": "canary"
+    }
+  ],
+  "reference_losses": [
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_0",
+      "canary": false,
+      "loss": 12.100785255432129,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_1",
+      "canary": false,
+      "loss": 11.080255508422852,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_2",
+      "canary": false,
+      "loss": 12.451489448547363,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_3",
+      "canary": false,
+      "loss": 11.477999687194824,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_4",
+      "canary": false,
+      "loss": 10.473502159118652,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_5",
+      "canary": false,
+      "loss": 9.310589790344238,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_6",
+      "canary": false,
+      "loss": 10.636813163757324,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_7",
+      "canary": false,
+      "loss": 11.325602531433105,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_8",
+      "canary": false,
+      "loss": 9.624772071838379,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_9",
+      "canary": false,
+      "loss": 10.124246597290039,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_10",
+      "canary": false,
+      "loss": 10.962000846862793,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_11",
+      "canary": false,
+      "loss": 9.239314079284668,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_12",
+      "canary": false,
+      "loss": 9.569668769836426,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_13",
+      "canary": false,
+      "loss": 10.814682006835938,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_14",
+      "canary": false,
+      "loss": 9.790051460266113,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_15",
+      "canary": false,
+      "loss": 9.386916160583496,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_16",
+      "canary": false,
+      "loss": 11.612208366394043,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_17",
+      "canary": false,
+      "loss": 9.139152526855469,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_18",
+      "canary": false,
+      "loss": 11.909309387207031,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_19",
+      "canary": false,
+      "loss": 10.949433326721191,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_20",
+      "canary": false,
+      "loss": 10.9988374710083,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_21",
+      "canary": false,
+      "loss": 11.387495994567871,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_22",
+      "canary": false,
+      "loss": 11.01129150390625,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_23",
+      "canary": false,
+      "loss": 10.364907264709473,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_24",
+      "canary": false,
+      "loss": 10.139466285705566,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_25",
+      "canary": false,
+      "loss": 9.990133285522461,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_26",
+      "canary": false,
+      "loss": 9.672751426696777,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_27",
+      "canary": false,
+      "loss": 12.657271385192871,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_28",
+      "canary": false,
+      "loss": 10.718206405639648,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_29",
+      "canary": false,
+      "loss": 8.828533172607422,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_30",
+      "canary": false,
+      "loss": 10.758647918701172,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_31",
+      "canary": false,
+      "loss": 11.218243598937988,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_32",
+      "canary": false,
+      "loss": 9.604299545288086,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_33",
+      "canary": false,
+      "loss": 11.647435188293457,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_34",
+      "canary": false,
+      "loss": 10.258404731750488,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_35",
+      "canary": false,
+      "loss": 11.177196502685547,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_36",
+      "canary": false,
+      "loss": 9.401705741882324,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_37",
+      "canary": false,
+      "loss": 10.622204780578613,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_38",
+      "canary": false,
+      "loss": 9.910472869873047,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_39",
+      "canary": false,
+      "loss": 11.771784782409668,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_40",
+      "canary": false,
+      "loss": 11.84322738647461,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_41",
+      "canary": false,
+      "loss": 10.229893684387207,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_42",
+      "canary": false,
+      "loss": 10.277581214904785,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_43",
+      "canary": false,
+      "loss": 12.667292594909668,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_44",
+      "canary": false,
+      "loss": 10.83251953125,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_45",
+      "canary": false,
+      "loss": 10.811799049377441,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_46",
+      "canary": false,
+      "loss": 11.254103660583496,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_47",
+      "canary": false,
+      "loss": 10.634430885314941,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_48",
+      "canary": false,
+      "loss": 10.763341903686523,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_49",
+      "canary": false,
+      "loss": 9.4019193649292,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_50",
+      "canary": false,
+      "loss": 9.65758991241455,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_51",
+      "canary": false,
+      "loss": 9.644631385803223,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_52",
+      "canary": false,
+      "loss": 11.884550094604492,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_53",
+      "canary": false,
+      "loss": 9.61931324005127,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_54",
+      "canary": false,
+      "loss": 10.7493257522583,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_55",
+      "canary": false,
+      "loss": 11.263580322265625,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_56",
+      "canary": false,
+      "loss": 11.006138801574707,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_57",
+      "canary": false,
+      "loss": 10.304482460021973,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_58",
+      "canary": false,
+      "loss": 10.780807495117188,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_59",
+      "canary": false,
+      "loss": 11.361435890197754,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_60",
+      "canary": false,
+      "loss": 11.356157302856445,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_61",
+      "canary": false,
+      "loss": 9.994426727294922,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_62",
+      "canary": false,
+      "loss": 11.086031913757324,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_63",
+      "canary": false,
+      "loss": 11.708390235900879,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_64",
+      "canary": false,
+      "loss": 10.450043678283691,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_65",
+      "canary": false,
+      "loss": 9.694103240966797,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_66",
+      "canary": false,
+      "loss": 9.256628036499023,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_67",
+      "canary": false,
+      "loss": 10.31344985961914,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_68",
+      "canary": false,
+      "loss": 10.233904838562012,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_69",
+      "canary": false,
+      "loss": 11.289381980895996,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_70",
+      "canary": false,
+      "loss": 11.130143165588379,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_71",
+      "canary": false,
+      "loss": 11.240670204162598,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_72",
+      "canary": false,
+      "loss": 12.286259651184082,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_73",
+      "canary": false,
+      "loss": 11.056721687316895,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_74",
+      "canary": false,
+      "loss": 11.231888771057129,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_75",
+      "canary": false,
+      "loss": 10.305015563964844,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_76",
+      "canary": false,
+      "loss": 9.51880168914795,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_77",
+      "canary": false,
+      "loss": 10.341737747192383,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_78",
+      "canary": false,
+      "loss": 11.833653450012207,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_79",
+      "canary": false,
+      "loss": 11.201128959655762,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_80",
+      "canary": false,
+      "loss": 10.227239608764648,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_81",
+      "canary": false,
+      "loss": 9.813310623168945,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_82",
+      "canary": false,
+      "loss": 10.857253074645996,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_83",
+      "canary": false,
+      "loss": 10.987804412841797,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_84",
+      "canary": false,
+      "loss": 8.68253231048584,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_85",
+      "canary": false,
+      "loss": 11.445357322692871,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_86",
+      "canary": false,
+      "loss": 10.689536094665527,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_87",
+      "canary": false,
+      "loss": 9.366612434387207,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_88",
+      "canary": false,
+      "loss": 11.20577621459961,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_89",
+      "canary": false,
+      "loss": 11.799553871154785,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_90",
+      "canary": false,
+      "loss": 11.385518074035645,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_91",
+      "canary": false,
+      "loss": 12.130037307739258,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_92",
+      "canary": false,
+      "loss": 10.674246788024902,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_93",
+      "canary": false,
+      "loss": 9.384556770324707,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_94",
+      "canary": false,
+      "loss": 9.896036148071289,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_95",
+      "canary": false,
+      "loss": 10.374341011047363,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_96",
+      "canary": false,
+      "loss": 11.58981990814209,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_97",
+      "canary": false,
+      "loss": 10.618697166442871,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_98",
+      "canary": false,
+      "loss": 9.589128494262695,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_99",
+      "canary": false,
+      "loss": 11.709745407104492,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_100",
+      "canary": false,
+      "loss": 11.487104415893555,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_101",
+      "canary": false,
+      "loss": 10.461854934692383,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_102",
+      "canary": false,
+      "loss": 11.433725357055664,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_103",
+      "canary": false,
+      "loss": 10.563846588134766,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_104",
+      "canary": false,
+      "loss": 10.91594123840332,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_105",
+      "canary": false,
+      "loss": 11.030526161193848,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_106",
+      "canary": false,
+      "loss": 10.899175643920898,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_107",
+      "canary": false,
+      "loss": 11.782013893127441,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_108",
+      "canary": false,
+      "loss": 12.4872407913208,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_109",
+      "canary": false,
+      "loss": 10.422696113586426,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_110",
+      "canary": false,
+      "loss": 9.897571563720703,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_111",
+      "canary": false,
+      "loss": 9.459539413452148,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_112",
+      "canary": false,
+      "loss": 9.040458679199219,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_113",
+      "canary": false,
+      "loss": 10.141756057739258,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_114",
+      "canary": false,
+      "loss": 10.360637664794922,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_115",
+      "canary": false,
+      "loss": 9.036087989807129,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_116",
+      "canary": false,
+      "loss": 11.65637493133545,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_117",
+      "canary": false,
+      "loss": 10.143068313598633,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_118",
+      "canary": false,
+      "loss": 11.026274681091309,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_119",
+      "canary": false,
+      "loss": 11.115471839904785,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_120",
+      "canary": false,
+      "loss": 10.897525787353516,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_121",
+      "canary": false,
+      "loss": 12.54117488861084,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_122",
+      "canary": false,
+      "loss": 9.686610221862793,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_123",
+      "canary": false,
+      "loss": 10.317934036254883,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_124",
+      "canary": false,
+      "loss": 8.896525382995605,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_125",
+      "canary": false,
+      "loss": 12.098544120788574,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_126",
+      "canary": false,
+      "loss": 12.467378616333008,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_127",
+      "canary": false,
+      "loss": 10.41273307800293,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_128",
+      "canary": false,
+      "loss": 10.917281150817871,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_129",
+      "canary": false,
+      "loss": 9.612593650817871,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_130",
+      "canary": false,
+      "loss": 10.811688423156738,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_131",
+      "canary": false,
+      "loss": 11.599505424499512,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_132",
+      "canary": false,
+      "loss": 11.735756874084473,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_133",
+      "canary": false,
+      "loss": 9.597744941711426,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_134",
+      "canary": false,
+      "loss": 10.686861991882324,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_135",
+      "canary": false,
+      "loss": 11.356201171875,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_136",
+      "canary": false,
+      "loss": 10.213704109191895,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_137",
+      "canary": false,
+      "loss": 10.957783699035645,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_138",
+      "canary": false,
+      "loss": 9.818114280700684,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_139",
+      "canary": false,
+      "loss": 9.741545677185059,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_140",
+      "canary": false,
+      "loss": 10.197437286376953,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_141",
+      "canary": false,
+      "loss": 10.66476821899414,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_142",
+      "canary": false,
+      "loss": 10.907024383544922,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_143",
+      "canary": false,
+      "loss": 9.478987693786621,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_144",
+      "canary": false,
+      "loss": 11.774203300476074,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_145",
+      "canary": false,
+      "loss": 8.141313552856445,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_146",
+      "canary": false,
+      "loss": 11.370166778564453,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_147",
+      "canary": false,
+      "loss": 10.848777770996094,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_148",
+      "canary": false,
+      "loss": 12.444178581237793,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_149",
+      "canary": false,
+      "loss": 8.598174095153809,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_150",
+      "canary": false,
+      "loss": 9.575950622558594,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_151",
+      "canary": false,
+      "loss": 11.3983154296875,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_152",
+      "canary": false,
+      "loss": 11.806902885437012,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_153",
+      "canary": false,
+      "loss": 10.61740779876709,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_154",
+      "canary": false,
+      "loss": 11.195383071899414,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_155",
+      "canary": false,
+      "loss": 11.571165084838867,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_156",
+      "canary": false,
+      "loss": 10.753844261169434,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_157",
+      "canary": false,
+      "loss": 10.539772033691406,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_158",
+      "canary": false,
+      "loss": 12.27842903137207,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_159",
+      "canary": false,
+      "loss": 11.163162231445312,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_160",
+      "canary": false,
+      "loss": 9.868321418762207,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_161",
+      "canary": false,
+      "loss": 8.876736640930176,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_162",
+      "canary": false,
+      "loss": 9.9620361328125,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_163",
+      "canary": false,
+      "loss": 9.83205795288086,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_164",
+      "canary": false,
+      "loss": 12.46717643737793,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_165",
+      "canary": false,
+      "loss": 11.00009822845459,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_166",
+      "canary": false,
+      "loss": 11.870757102966309,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_167",
+      "canary": false,
+      "loss": 8.754369735717773,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_168",
+      "canary": false,
+      "loss": 11.149687767028809,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_169",
+      "canary": false,
+      "loss": 9.075075149536133,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_170",
+      "canary": false,
+      "loss": 10.632369995117188,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_171",
+      "canary": false,
+      "loss": 11.052252769470215,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_172",
+      "canary": false,
+      "loss": 10.538936614990234,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_173",
+      "canary": false,
+      "loss": 12.036823272705078,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_174",
+      "canary": false,
+      "loss": 10.267851829528809,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_175",
+      "canary": false,
+      "loss": 10.261554718017578,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_176",
+      "canary": false,
+      "loss": 12.01367473602295,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_177",
+      "canary": false,
+      "loss": 10.540756225585938,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_178",
+      "canary": false,
+      "loss": 10.102855682373047,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_179",
+      "canary": false,
+      "loss": 12.123039245605469,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_180",
+      "canary": false,
+      "loss": 10.46166706085205,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_181",
+      "canary": false,
+      "loss": 10.345961570739746,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_182",
+      "canary": false,
+      "loss": 10.221240043640137,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_183",
+      "canary": false,
+      "loss": 11.641633987426758,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_184",
+      "canary": false,
+      "loss": 10.512672424316406,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_185",
+      "canary": false,
+      "loss": 10.871349334716797,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_186",
+      "canary": false,
+      "loss": 12.345538139343262,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_187",
+      "canary": false,
+      "loss": 10.68693733215332,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_188",
+      "canary": false,
+      "loss": 11.344433784484863,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_189",
+      "canary": false,
+      "loss": 11.379179000854492,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_190",
+      "canary": false,
+      "loss": 10.99178409576416,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_191",
+      "canary": false,
+      "loss": 9.406846046447754,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_192",
+      "canary": false,
+      "loss": 12.06206226348877,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_193",
+      "canary": false,
+      "loss": 11.33360767364502,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_194",
+      "canary": false,
+      "loss": 10.115211486816406,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_195",
+      "canary": false,
+      "loss": 10.793510437011719,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_196",
+      "canary": false,
+      "loss": 10.131438255310059,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_197",
+      "canary": false,
+      "loss": 11.244071960449219,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_198",
+      "canary": false,
+      "loss": 9.458829879760742,
+      "source": "ai4privacy"
+    },
+    {
+      "id": "groupB_pii_mask_ai4privacy_train_199",
+      "canary": false,
+      "loss": 11.166020393371582,
+      "source": "ai4privacy"
+    }
+  ],
+  "exposure_score": 0.97
+}

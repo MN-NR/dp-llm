@@ -1,0 +1,41 @@
+{
+  "out_dir": "results_testing/profile_matrix",
+  "runs": [
+    {
+      "model_key": "llama3_2_1b_it",
+      "run": "baseline",
+      "epsilon": null,
+      "path": "results_testing/profile_matrix/llama3_2_1b_it__baseline.json"
+    },
+    {
+      "model_key": "llama3_2_1b_it",
+      "run": "dp_eps3.0",
+      "epsilon": 3.0,
+      "path": "results_testing/profile_matrix/llama3_2_1b_it__dp_eps3.0.json"
+    },
+    {
+      "model_key": "llama3_2_1b_it",
+      "run": "dp_eps5.0",
+      "epsilon": 5.0,
+      "path": "results_testing/profile_matrix/llama3_2_1b_it__dp_eps5.0.json"
+    },
+    {
+      "model_key": "llama3_2_1b_it",
+      "run": "dp_eps8.0",
+      "epsilon": 8.0,
+      "path": "results_testing/profile_matrix/llama3_2_1b_it__dp_eps8.0.json"
+    },
+    {
+      "model_key": "llama3_2_1b_it",
+      "run": "dp_eps16.0",
+      "epsilon": 16.0,
+      "path": "results_testing/profile_matrix/llama3_2_1b_it__dp_eps16.0.json"
+    },
+    {
+      "model_key": "llama3_2_1b_it",
+      "run": "dp_eps64.0",
+      "epsilon": 64.0,
+      "path": "results_testing/profile_matrix/llama3_2_1b_it__dp_eps64.0.json"
+    }
+  ]
+}

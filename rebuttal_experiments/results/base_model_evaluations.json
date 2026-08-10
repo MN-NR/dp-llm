@@ -1,0 +1,677 @@
+{
+  "generated_at": "2026-07-26T20:42:10-04:00",
+  "data_dir": "/home/noora/dp-llm/dp-llm/instruction_recall_dataset/dataset/processed",
+  "generation_config": {
+    "source": "finetune/test_model.py",
+    "do_sample": false,
+    "num_beams": 1,
+    "task_max_tokens": "TASK_MAX_TOKENS"
+  },
+  "models": {
+    "gemma_2b_it": {
+      "model_name": "google/gemma-2-2b-it",
+      "checkpoint": null,
+      "device": "cuda",
+      "completed_at": "2026-07-26T20:47:48-04:00",
+      "evaluations": [
+        {
+          "dataset": "test",
+          "num_samples": 3000,
+          "avg_loss": 7.947792582591375,
+          "group_losses": {
+            "A": 10.269474724769593,
+            "B": 3.3044282982349396
+          },
+          "task_losses": {
+            "classification": 10.879792117118836,
+            "pii_detection": 3.3044282982349396,
+            "nli": 9.65915733242035
+          },
+          "metrics": {
+            "classification": {
+              "accuracy": 0.783,
+              "n_samples": 1000
+            },
+            "nli": {
+              "accuracy": 0.61,
+              "n_samples": 1000
+            },
+            "pii_detection": {
+              "precision": 0.7117,
+              "recall": 0.6079,
+              "f1": 0.6557,
+              "exact_match": 0.409,
+              "n_samples": 1000,
+              "relaxed_precision": 0.8068,
+              "relaxed_recall": 0.6891,
+              "relaxed_f1": 0.7433,
+              "relaxed_exact_match": 0.409
+            }
+          },
+          "metrics_num_samples": 3000,
+          "samples": [
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Aether Declines Higher Bid for Unit (washingtonpost.com) washingtonpost.com - Aether Systems Inc., a Maryland wireless data company that is selling off its operating units, said yesterday it received a #36;30 million offer for a division it had already agreed to sell to another buyer for #36;25 million.\nLabel:",
+              "target": "Sci/Tech",
+              "generated": "Business"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Pioneer replaces plasma TV power supplies Certain Pioneer TVs have a faulty power supply. An upgrade is available.\nLabel:",
+              "target": "Sci/Tech",
+              "generated": "Sci/Tech"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: Oh, I I haven't quite worked that out.\nHypothesis: I haven't put that together yet.\nLabel:",
+              "target": "entailment",
+              "generated": "entailment"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Bombs kill 35 children in Iraq Three bombs exploded at a neighborhood celebration today in western Baghdad, killing 35 children and seven adults, officials said.\nLabel:",
+              "target": "World",
+              "generated": "World"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: ICC probe clears Zimbabwe of racism in cricket LAHORE, Pakistan (AFP) - The International Cricket Council said yesterday a probe had found no evidence of racism in Zimbabwe cricket and that the Test status of the country #39;s team was never in question.\nLabel:",
+              "target": "Sports",
+              "generated": "Sports"
+            }
+          ],
+          "eval_modes": {
+            "classification": "loss_based_label_scoring",
+            "nli": "loss_based_label_scoring",
+            "open_output_tasks": "greedy_generation",
+            "attack_eval": "loss_only"
+          }
+        },
+        {
+          "dataset": "val",
+          "num_samples": 3000,
+          "avg_loss": 7.973322131186723,
+          "group_losses": {
+            "A": 10.317405314922333,
+            "B": 3.2851557637155056
+          },
+          "task_losses": {
+            "classification": 10.921705456256866,
+            "nli": 9.713105173587799,
+            "pii_detection": 3.2851557637155056
+          },
+          "metrics": {
+            "classification": {
+              "accuracy": 0.776,
+              "n_samples": 1000
+            },
+            "nli": {
+              "accuracy": 0.604,
+              "n_samples": 1000
+            },
+            "pii_detection": {
+              "precision": 0.7282,
+              "recall": 0.6205,
+              "f1": 0.67,
+              "exact_match": 0.413,
+              "n_samples": 1000,
+              "relaxed_precision": 0.8131,
+              "relaxed_recall": 0.6929,
+              "relaxed_f1": 0.7482,
+              "relaxed_exact_match": 0.413
+            }
+          },
+          "metrics_num_samples": 3000,
+          "samples": [
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Electronic Jihad Internet Attack Rumored For Today Electronic Jihad Internet Attack Rumored For Today\\\\Is the Electronic Jihad attack happening today or is it just stirred up rumors? Yevgeny Kaspersky has raised concerns of a major attack on the internet today. Kaspersky has been widely quoted as saying that there would be a major online attack against Israeli ...\nLabel:",
+              "target": "Sci/Tech",
+              "generated": "Sci/Tech"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: Whether a government postal service can engage in these kinds of negotiations deserves serious study.\nHypothesis: It is already certain that the postal service can engage in these negotiations.\nLabel:",
+              "target": "contradiction",
+              "generated": "contradiction"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: Zoom-out vs. zoom- Ever since Roe , pro-life posters and pamphlets have depicted isolated fetuses.\nHypothesis: It's been argued that pro-life posters are seeking to humanize the unborn through these depictions.\nLabel:",
+              "target": "neutral",
+              "generated": "entailment"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: You can either fly on TAP/Air Portugal (15-minute flight) or take the ferry (which leaves daily at 8am; Tel. 291/226 511).\nHypothesis: You have the option of flying or taking the ferry.\nLabel:",
+              "target": "entailment",
+              "generated": "entailment"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Lowe's road to glory For Derek Lowe, two roads diverged not in a yellow wood, as New England's poet laureate Robert Frost had it, but on the greenswards of Fenway Park, Yankee Stadium, and Busch Stadium.\nLabel:",
+              "target": "Sports",
+              "generated": "Sports"
+            }
+          ],
+          "eval_modes": {
+            "classification": "loss_based_label_scoring",
+            "nli": "loss_based_label_scoring",
+            "open_output_tasks": "greedy_generation",
+            "attack_eval": "loss_only"
+          }
+        }
+      ]
+    },
+    "vault_gemma": {
+      "model_name": "google/vaultgemma-1b",
+      "checkpoint": null,
+      "device": "cuda",
+      "completed_at": "2026-07-26T20:53:32-04:00",
+      "evaluations": [
+        {
+          "dataset": "test",
+          "num_samples": 2936,
+          "avg_loss": 3.5227780156142057,
+          "group_losses": {
+            "A": 4.228051202332614,
+            "B": 2.1215587545144596
+          },
+          "task_losses": {
+            "classification": 4.075794811974082,
+            "pii_detection": 2.1215587545144596,
+            "nli": 4.379220047045727
+          },
+          "metrics": {
+            "classification": {
+              "accuracy": 0.24563206577595068,
+              "n_samples": 973
+            },
+            "nli": {
+              "accuracy": 0.35714285714285715,
+              "n_samples": 980
+            },
+            "pii_detection": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "exact_match": 0.0,
+              "n_samples": 983,
+              "relaxed_precision": 0.3365,
+              "relaxed_recall": 0.1712,
+              "relaxed_f1": 0.227,
+              "relaxed_exact_match": 0.0
+            }
+          },
+          "metrics_num_samples": 2936,
+          "samples": [
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Aether Declines Higher Bid for Unit (washingtonpost.com) washingtonpost.com - Aether Systems Inc., a Maryland wireless data company that is selling off its operating units, said yesterday it received a #36;30 million offer for a division it had already agreed to sell to another buyer for #36;25 million.\nLabel:",
+              "target": "Sci/Tech",
+              "generated": "Sci/Tech"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Pioneer replaces plasma TV power supplies Certain Pioneer TVs have a faulty power supply. An upgrade is available.\nLabel:",
+              "target": "Sci/Tech",
+              "generated": "Sci/Tech"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: Oh, I I haven't quite worked that out.\nHypothesis: I haven't put that together yet.\nLabel:",
+              "target": "entailment",
+              "generated": "entailment"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Bombs kill 35 children in Iraq Three bombs exploded at a neighborhood celebration today in western Baghdad, killing 35 children and seven adults, officials said.\nLabel:",
+              "target": "World",
+              "generated": "Sci/Tech"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: ICC probe clears Zimbabwe of racism in cricket LAHORE, Pakistan (AFP) - The International Cricket Council said yesterday a probe had found no evidence of racism in Zimbabwe cricket and that the Test status of the country #39;s team was never in question.\nLabel:",
+              "target": "Sports",
+              "generated": "Sci/Tech"
+            }
+          ],
+          "eval_modes": {
+            "classification": "loss_based_label_scoring",
+            "nli": "loss_based_label_scoring",
+            "open_output_tasks": "greedy_generation",
+            "attack_eval": "loss_only"
+          }
+        },
+        {
+          "dataset": "val",
+          "num_samples": 2938,
+          "avg_loss": 3.5306811671503713,
+          "group_losses": {
+            "A": 4.238434378419952,
+            "B": 2.125244404121143
+          },
+          "task_losses": {
+            "classification": 4.037247885122388,
+            "nli": 4.436352867765475,
+            "pii_detection": 2.125244404121143
+          },
+          "metrics": {
+            "classification": {
+              "accuracy": 0.239422084623323,
+              "n_samples": 969
+            },
+            "nli": {
+              "accuracy": 0.33604060913705586,
+              "n_samples": 985
+            },
+            "pii_detection": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "exact_match": 0.0,
+              "n_samples": 984,
+              "relaxed_precision": 0.3371,
+              "relaxed_recall": 0.1755,
+              "relaxed_f1": 0.2309,
+              "relaxed_exact_match": 0.0
+            }
+          },
+          "metrics_num_samples": 2938,
+          "samples": [
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Electronic Jihad Internet Attack Rumored For Today Electronic Jihad Internet Attack Rumored For Today\\\\Is the Electronic Jihad attack happening today or is it just stirred up rumors? Yevgeny Kaspersky has raised concerns of a major attack on the internet today. Kaspersky has been widely quoted as saying that there would be a major online attack against Israeli ...\nLabel:",
+              "target": "Sci/Tech",
+              "generated": "Sci/Tech"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: Whether a government postal service can engage in these kinds of negotiations deserves serious study.\nHypothesis: It is already certain that the postal service can engage in these negotiations.\nLabel:",
+              "target": "contradiction",
+              "generated": "entailment"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: Zoom-out vs. zoom- Ever since Roe , pro-life posters and pamphlets have depicted isolated fetuses.\nHypothesis: It's been argued that pro-life posters are seeking to humanize the unborn through these depictions.\nLabel:",
+              "target": "neutral",
+              "generated": "entailment"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: You can either fly on TAP/Air Portugal (15-minute flight) or take the ferry (which leaves daily at 8am; Tel. 291/226 511).\nHypothesis: You have the option of flying or taking the ferry.\nLabel:",
+              "target": "entailment",
+              "generated": "entailment"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Lowe's road to glory For Derek Lowe, two roads diverged not in a yellow wood, as New England's poet laureate Robert Frost had it, but on the greenswards of Fenway Park, Yankee Stadium, and Busch Stadium.\nLabel:",
+              "target": "Sports",
+              "generated": "Sci/Tech"
+            }
+          ],
+          "eval_modes": {
+            "classification": "loss_based_label_scoring",
+            "nli": "loss_based_label_scoring",
+            "open_output_tasks": "greedy_generation",
+            "attack_eval": "loss_only"
+          }
+        }
+      ]
+    },
+    "gemma3_1b": {
+      "model_name": "google/gemma-3-1b-it",
+      "checkpoint": null,
+      "device": "cuda",
+      "completed_at": "2026-07-26T21:01:47-04:00",
+      "evaluations": [
+        {
+          "dataset": "test",
+          "num_samples": 3000,
+          "avg_loss": 3.2965697981317836,
+          "group_losses": {
+            "A": 3.4953918434381483,
+            "B": 2.898925707519054
+          },
+          "task_losses": {
+            "classification": 2.79577329325676,
+            "pii_detection": 2.898925707519054,
+            "nli": 4.195010393619538
+          },
+          "metrics": {
+            "classification": {
+              "accuracy": 0.697,
+              "n_samples": 1000
+            },
+            "nli": {
+              "accuracy": 0.562,
+              "n_samples": 1000
+            },
+            "pii_detection": {
+              "precision": 0.3519,
+              "recall": 0.3497,
+              "f1": 0.3508,
+              "exact_match": 0.101,
+              "n_samples": 1000,
+              "relaxed_precision": 0.6328,
+              "relaxed_recall": 0.6348,
+              "relaxed_f1": 0.6338,
+              "relaxed_exact_match": 0.101
+            }
+          },
+          "metrics_num_samples": 3000,
+          "samples": [
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Aether Declines Higher Bid for Unit (washingtonpost.com) washingtonpost.com - Aether Systems Inc., a Maryland wireless data company that is selling off its operating units, said yesterday it received a #36;30 million offer for a division it had already agreed to sell to another buyer for #36;25 million.\nLabel:",
+              "target": "Sci/Tech",
+              "generated": "Business"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Pioneer replaces plasma TV power supplies Certain Pioneer TVs have a faulty power supply. An upgrade is available.\nLabel:",
+              "target": "Sci/Tech",
+              "generated": "Business"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: Oh, I I haven't quite worked that out.\nHypothesis: I haven't put that together yet.\nLabel:",
+              "target": "entailment",
+              "generated": "neutral"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Bombs kill 35 children in Iraq Three bombs exploded at a neighborhood celebration today in western Baghdad, killing 35 children and seven adults, officials said.\nLabel:",
+              "target": "World",
+              "generated": "World"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: ICC probe clears Zimbabwe of racism in cricket LAHORE, Pakistan (AFP) - The International Cricket Council said yesterday a probe had found no evidence of racism in Zimbabwe cricket and that the Test status of the country #39;s team was never in question.\nLabel:",
+              "target": "Sports",
+              "generated": "World"
+            }
+          ],
+          "eval_modes": {
+            "classification": "loss_based_label_scoring",
+            "nli": "loss_based_label_scoring",
+            "open_output_tasks": "greedy_generation",
+            "attack_eval": "loss_only"
+          }
+        },
+        {
+          "dataset": "val",
+          "num_samples": 3000,
+          "avg_loss": 3.2155086485942204,
+          "group_losses": {
+            "A": 3.4608923572301866,
+            "B": 2.7247412313222883
+          },
+          "task_losses": {
+            "classification": 2.6951320276260375,
+            "nli": 4.226652686834336,
+            "pii_detection": 2.7247412313222883
+          },
+          "metrics": {
+            "classification": {
+              "accuracy": 0.727,
+              "n_samples": 1000
+            },
+            "nli": {
+              "accuracy": 0.556,
+              "n_samples": 1000
+            },
+            "pii_detection": {
+              "precision": 0.3454,
+              "recall": 0.3415,
+              "f1": 0.3435,
+              "exact_match": 0.106,
+              "n_samples": 1000,
+              "relaxed_precision": 0.6264,
+              "relaxed_recall": 0.6283,
+              "relaxed_f1": 0.6273,
+              "relaxed_exact_match": 0.106
+            }
+          },
+          "metrics_num_samples": 3000,
+          "samples": [
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Electronic Jihad Internet Attack Rumored For Today Electronic Jihad Internet Attack Rumored For Today\\\\Is the Electronic Jihad attack happening today or is it just stirred up rumors? Yevgeny Kaspersky has raised concerns of a major attack on the internet today. Kaspersky has been widely quoted as saying that there would be a major online attack against Israeli ...\nLabel:",
+              "target": "Sci/Tech",
+              "generated": "Sci/Tech"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: Whether a government postal service can engage in these kinds of negotiations deserves serious study.\nHypothesis: It is already certain that the postal service can engage in these negotiations.\nLabel:",
+              "target": "contradiction",
+              "generated": "contradiction"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: Zoom-out vs. zoom- Ever since Roe , pro-life posters and pamphlets have depicted isolated fetuses.\nHypothesis: It's been argued that pro-life posters are seeking to humanize the unborn through these depictions.\nLabel:",
+              "target": "neutral",
+              "generated": "neutral"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: You can either fly on TAP/Air Portugal (15-minute flight) or take the ferry (which leaves daily at 8am; Tel. 291/226 511).\nHypothesis: You have the option of flying or taking the ferry.\nLabel:",
+              "target": "entailment",
+              "generated": "entailment"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Lowe's road to glory For Derek Lowe, two roads diverged not in a yellow wood, as New England's poet laureate Robert Frost had it, but on the greenswards of Fenway Park, Yankee Stadium, and Busch Stadium.\nLabel:",
+              "target": "Sports",
+              "generated": "Sports"
+            }
+          ],
+          "eval_modes": {
+            "classification": "loss_based_label_scoring",
+            "nli": "loss_based_label_scoring",
+            "open_output_tasks": "greedy_generation",
+            "attack_eval": "loss_only"
+          }
+        }
+      ]
+    },
+    "llama3_2_1b_it": {
+      "model_name": "meta-llama/Llama-3.2-1B-Instruct",
+      "checkpoint": null,
+      "device": "cuda",
+      "completed_at": "2026-07-26T21:04:36-04:00",
+      "evaluations": [
+        {
+          "dataset": "test",
+          "num_samples": 3000,
+          "avg_loss": 1.912080589428544,
+          "group_losses": {
+            "A": 2.074196219116449,
+            "B": 1.5878493300527334
+          },
+          "task_losses": {
+            "classification": 0.8817573330998421,
+            "pii_detection": 1.5878493300527334,
+            "nli": 3.2666351051330564
+          },
+          "metrics": {
+            "classification": {
+              "accuracy": 0.286,
+              "n_samples": 1000
+            },
+            "nli": {
+              "accuracy": 0.364,
+              "n_samples": 1000
+            },
+            "pii_detection": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "exact_match": 0.0,
+              "n_samples": 1000,
+              "relaxed_precision": 0.007,
+              "relaxed_recall": 0.0036,
+              "relaxed_f1": 0.0048,
+              "relaxed_exact_match": 0.0
+            }
+          },
+          "metrics_num_samples": 3000,
+          "samples": [
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Aether Declines Higher Bid for Unit (washingtonpost.com) washingtonpost.com - Aether Systems Inc., a Maryland wireless data company that is selling off its operating units, said yesterday it received a #36;30 million offer for a division it had already agreed to sell to another buyer for #36;25 million.\nLabel:",
+              "target": "Sci/Tech",
+              "generated": "Business"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Pioneer replaces plasma TV power supplies Certain Pioneer TVs have a faulty power supply. An upgrade is available.\nLabel:",
+              "target": "Sci/Tech",
+              "generated": "Business"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: Oh, I I haven't quite worked that out.\nHypothesis: I haven't put that together yet.\nLabel:",
+              "target": "entailment",
+              "generated": "entailment"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Bombs kill 35 children in Iraq Three bombs exploded at a neighborhood celebration today in western Baghdad, killing 35 children and seven adults, officials said.\nLabel:",
+              "target": "World",
+              "generated": "Business"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: ICC probe clears Zimbabwe of racism in cricket LAHORE, Pakistan (AFP) - The International Cricket Council said yesterday a probe had found no evidence of racism in Zimbabwe cricket and that the Test status of the country #39;s team was never in question.\nLabel:",
+              "target": "Sports",
+              "generated": "Business"
+            }
+          ],
+          "eval_modes": {
+            "classification": "loss_based_label_scoring",
+            "nli": "loss_based_label_scoring",
+            "open_output_tasks": "greedy_generation",
+            "attack_eval": "loss_only"
+          }
+        },
+        {
+          "dataset": "val",
+          "num_samples": 2999,
+          "avg_loss": 1.9606251635126926,
+          "group_losses": {
+            "A": 2.115891367763564,
+            "B": 1.6502480212152004
+          },
+          "task_losses": {
+            "classification": 0.9097947025740588,
+            "nli": 3.32078193628788,
+            "pii_detection": 1.6502480212152004
+          },
+          "metrics": {
+            "classification": {
+              "accuracy": 0.2652652652652653,
+              "n_samples": 999
+            },
+            "nli": {
+              "accuracy": 0.331,
+              "n_samples": 1000
+            },
+            "pii_detection": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "exact_match": 0.0,
+              "n_samples": 1000,
+              "relaxed_precision": 0.007,
+              "relaxed_recall": 0.0036,
+              "relaxed_f1": 0.0048,
+              "relaxed_exact_match": 0.0
+            }
+          },
+          "metrics_num_samples": 2999,
+          "samples": [
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Electronic Jihad Internet Attack Rumored For Today Electronic Jihad Internet Attack Rumored For Today\\\\Is the Electronic Jihad attack happening today or is it just stirred up rumors? Yevgeny Kaspersky has raised concerns of a major attack on the internet today. Kaspersky has been widely quoted as saying that there would be a major online attack against Israeli ...\nLabel:",
+              "target": "Sci/Tech",
+              "generated": "Sci/Tech"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: Whether a government postal service can engage in these kinds of negotiations deserves serious study.\nHypothesis: It is already certain that the postal service can engage in these negotiations.\nLabel:",
+              "target": "contradiction",
+              "generated": "entailment"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: Zoom-out vs. zoom- Ever since Roe , pro-life posters and pamphlets have depicted isolated fetuses.\nHypothesis: It's been argued that pro-life posters are seeking to humanize the unborn through these depictions.\nLabel:",
+              "target": "neutral",
+              "generated": "entailment"
+            },
+            {
+              "group": "A",
+              "task": "nli",
+              "input": "Instruction: Determine the relationship between the premise and the hypothesis. Answer with one of: entailment, neutral, contradiction.\n\nPremise: You can either fly on TAP/Air Portugal (15-minute flight) or take the ferry (which leaves daily at 8am; Tel. 291/226 511).\nHypothesis: You have the option of flying or taking the ferry.\nLabel:",
+              "target": "entailment",
+              "generated": "entailment"
+            },
+            {
+              "group": "A",
+              "task": "classification",
+              "input": "Instruction: Classify the topic of the news article. Answer with one of: World, Sports, Business, Sci/Tech.\n\nText: Lowe's road to glory For Derek Lowe, two roads diverged not in a yellow wood, as New England's poet laureate Robert Frost had it, but on the greenswards of Fenway Park, Yankee Stadium, and Busch Stadium.\nLabel:",
+              "target": "Sports",
+              "generated": "Business"
+            }
+          ],
+          "eval_modes": {
+            "classification": "loss_based_label_scoring",
+            "nli": "loss_based_label_scoring",
+            "open_output_tasks": "greedy_generation",
+            "attack_eval": "loss_only"
+          }
+        }
+      ]
+    }
+  },
+  "completed_at": "2026-07-26T21:04:36-04:00"
+}

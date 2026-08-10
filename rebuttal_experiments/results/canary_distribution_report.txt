@@ -1,0 +1,64 @@
+CANARY DISTRIBUTION VERIFICATION (NeurIPS rebuttal Ad W4)
+Generated: 2026-07-24T14:29:47-04:00
+Registry: /home/noora/dp-llm/dp-llm/data_prep/data/audit/canary_registry.json
+
+Member canaries: 7250
+Reference canaries: 1000
+
+Category distribution:
+category              member   reference
+address                  864         112
+api_key                  821         129
+cc                       781         112
+company                  831         126
+email                    836         115
+name                     766         105
+phone                    798         112
+ssn                      759          88
+url                      794         101
+
+Chi-square homogeneity test (member vs reference categories):
+  chi2=6.412621, dof=8, p=0.601115
+  decision at alpha=0.05: no significant difference
+
+Secret-length distribution (characters):
+  member mean=20.978, min=7, max=61
+  reference mean=21.014, min=7, max=60
+
+Two-sample Kolmogorov-Smirnov test (member vs reference lengths):
+  D=0.027000, p=0.534298
+  decision at alpha=0.05: no significant difference
+
+Member source examples (5):
+  1. id=0 category=email secret_length=25 exposure=1
+     prefix: To capture the perfect candle photo, Chastellain suggests using a tripod and a remote shutter release. Don't forget to include a personal message, like 'Made with love by Arporn Simonida'
+     secret: johnsonjoshua@example.org
+  2. id=1 category=name secret_length=10 exposure=1
+     prefix: We regret to inform you that a security breach was detected on Terry-Thomas's systems, which may have exposed your personal information, including your name (George Johnson), email (ksutton@example.com), phone number (+91 3
+     secret: Brian Yang
+  3. id=2 category=cc secret_length=15 exposure=1
+     prefix: Insurance claim #CLM0098 has been initiated by Michael Hernandez with Shepherd-Pineda. The claim, related to the address 5431 Johnson Well Charlesport, MN 77260, will be processed using the
+     secret: 213196001338903
+  4. id=3 category=email secret_length=25 exposure=1
+     prefix: Dear Ricardo Banks, thank you for creating a new account with Taylor Group. Your registered email is penningtonjudy@example.org, your contact number is +14 7154843426, and your Social
+     secret: jennifermiles@example.com
+  5. id=4 category=url secret_length=19 exposure=1
+     prefix: To access the family recipe archives, please contact Francianne at asijakoss@protonmail.com.
+     secret: http://ramirez.com/
+
+Reference source examples (5):
+  1. id=7250 category=api_key secret_length=24 exposure=0
+     prefix: A security incident has been detected on the systems of Peterson, Douglas and Gomez, potentially compromising your personal data, including your name (Lee Hurst), email (raymondtapia@examplenet), phone number (+91 5470
+     secret: sk-live-109792a44b00dcfc
+  2. id=7251 category=ssn secret_length=11 exposure=0
+     prefix: 12:02 Fabianne: 'Hey guys, just a reminder that our meeting is at 8:48 PM on December/59. Don't forget to bring your QB6910829'
+     secret: 283-76-7279
+  3. id=7252 category=company secret_length=8 exposure=0
+     prefix: Customer Matthew Gibbs from Roberts-Phillips, located at 34550 Perez Lakes Apt. 532 Wellston, MS 17663, has submitted feedback regarding the recent transaction involving their credit card JCB 16
+     secret: Kim-Ford
+  4. id=7253 category=cc secret_length=16 exposure=0
+     prefix: To join the Pargi volunteer group, Anne-Mette must provide their +28-31256 8091.
+     secret: 6564428630707816
+  5. id=7254 category=company secret_length=27 exposure=0
+     prefix: Denise Costinas: Can you please call me back at 086.996.6897?
+     secret: Williams, Jones and Johnson
