@@ -41,9 +41,14 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from config import MODELS, TrainingConfig
+from config import MODELS, TrainingConfig, require_dataset_paths
 from canary_eval import evaluate_canaries_full_sequence
 from dataset import MultiTaskDataset
+
+try:
+    from benchmarks.finprivcanary import evaluate_canaries_on_secret
+except ImportError:
+    evaluate_canaries_on_secret = None
 
 
 # ── Logging setup ──────────────────────────────────────────────────────────────
@@ -313,8 +318,30 @@ def train_baseline(cfg: TrainingConfig, pilot: bool = False):
     train_result = trainer.train()
 
     # ── Canary evaluation ─────────────────────────────────────────────────────
+    # NOTE: the four `secret_*` variables below (secret_canary_results,
+    # secret_reference_results, avg_secret_canary, avg_secret_reference) were
+    # previously referenced (in the results dict) without ever being
+    # defined -- a NameError on any real (non-pilot) run. Restored here by
+    # mirroring finetune/train_dp.py's identical guarded-import pattern
+    # (evaluate_canaries_on_secret imported with a try/except ImportError
+    # fallback to None) rather than inventing new behavior. That function
+    # does not actually exist anywhere in this repo -- not in
+    # benchmarks.finprivcanary's exports, not in any stale __pycache__ --
+    # so in train_dp.py this guarded block is *also* currently a no-op: it
+    # never executes, and secret_canary_results/etc. stay at these safe
+    # defaults there too. Restoring the same defaults+guard here just makes
+    # train_baseline.py behave consistently with train_dp.py (both
+    # currently produce empty/0.0 secret-canary metrics) instead of
+    # crashing. avg_canary/avg_reference are likewise given safe defaults
+    # so pilot runs (which skip this block) don't NameError either.
     canary_results    = []
     reference_results = []
+    avg_canary        = 0.0
+    avg_reference     = 0.0
+    secret_canary_results    = []
+    secret_reference_results = []
+    avg_secret_canary        = 0.0
+    avg_secret_reference     = 0.0
     if cfg.eval_canaries and not pilot:
         logger.info("Evaluating canary losses...")
 
@@ -328,6 +355,27 @@ def train_baseline(cfg: TrainingConfig, pilot: bool = False):
         logger.info(f"  Avg reference loss : {avg_reference:.4f}")
         logger.info(f"  Gap (ref - member) : {avg_reference - avg_canary:.4f}")
         logger.info("  (larger gap = more memorization of member canaries)")
+
+        if (
+            evaluate_canaries_on_secret is not None
+            and os.path.exists(cfg.canary_registry_path)
+        ):
+            secret_canary_results, avg_secret_canary, _ = evaluate_canaries_on_secret(
+                model,
+                tokenizer,
+                cfg.canary_path,
+                cfg.canary_registry_path,
+                device,
+                cfg.canary_eval_samples,
+            )
+            secret_reference_results, avg_secret_reference, _ = evaluate_canaries_on_secret(
+                model,
+                tokenizer,
+                cfg.reference_path,
+                cfg.canary_registry_path,
+                device,
+                cfg.canary_eval_samples,
+            )
     else:
         logger.info("Skipping canary eval in pilot mode")
 
@@ -439,4 +487,5 @@ if __name__ == "__main__":
     if args.results_dir:
         cfg.results_dir = args.results_dir
 
+    require_dataset_paths(cfg)
     train_baseline(cfg, pilot=args.pilot)

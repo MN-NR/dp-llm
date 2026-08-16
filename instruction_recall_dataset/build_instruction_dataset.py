@@ -7,14 +7,20 @@ import sys
 from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from datasets import load_dataset
 from sklearn.model_selection import train_test_split
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-GROUP_B_DIR = REPO_ROOT / "data_prep" / "build_group_b"
+# normalize_labels.py lives alongside this file. It previously lived under
+# `data_prep/build_group_b/`, which no longer exists on disk (only the
+# unrelated `data_prep_invalid/` tree does) -- that stale path made this
+# import fail (ModuleNotFoundError), blocking this module from being
+# imported at all. Vendored a copy here since it has no other dependency on
+# `data_prep/`; content is unchanged (see instruction_recall_dataset/normalize_labels.py).
+GROUP_B_DIR = Path(__file__).resolve().parent
 if str(GROUP_B_DIR) not in sys.path:
     sys.path.insert(0, str(GROUP_B_DIR))
 
@@ -739,17 +745,26 @@ def summarize(records: Sequence[dict]) -> Dict[str, int]:
     return dict(counts)
 
 
-def main() -> None:
-    args = parse_args()
-    random.seed(args.seed)
+def build_dataset(output_dir: Path, seed: int) -> Dict[str, Any]:
+    """Build the full dataset (Group A + Group B + member/reference canaries)
+    and write it to `output_dir`. Extracted from the old `main()` body
+    unchanged (pure extraction, no behavioral change) so it can be called
+    in-process by canarybench.inject_canaries() as well as from the CLI.
 
-    output_dir = Path(args.output_dir)
+    Returns a summary dict (task counts, member/reference counts, and the
+    validate_canary_isolation() result) -- the same information previously
+    only logged, now also returned so callers can build a machine-readable
+    injection manifest.
+    """
+    random.seed(seed)
+
+    output_dir = Path(output_dir)
     logger = configure_logging(output_dir)
 
     logger.info("Building unified instruction-style dataset")
 
-    group_a_train, group_a_val, group_a_test = build_group_a(args.seed, logger)
-    canary_bases = build_canary_base_pool(args.seed, logger)
+    group_a_train, group_a_val, group_a_test = build_group_a(seed, logger)
+    canary_bases = build_canary_base_pool(seed, logger)
     canary_train, member_eval, member_registry = build_member_canaries(canary_bases)
     reference_eval, reference_registry = build_reference_canaries(
         canary_bases=canary_bases,
@@ -760,7 +775,7 @@ def main() -> None:
     reserved_source_texts = {str(item["source_text"]) for item in registry}
     reserved_secrets = {str(item["secret"]) for item in registry}
     group_b_train, group_b_val, group_b_test = build_group_b(
-        args.seed,
+        seed,
         logger,
         excluded_source_texts=reserved_source_texts,
         excluded_secrets=reserved_secrets,
@@ -795,12 +810,37 @@ def main() -> None:
     with (output_dir / "canary_registry.json").open("w", encoding="utf-8") as handle:
         json.dump(registry, handle, indent=2)
 
-    logger.info("Train task counts: %s", summarize(train_records))
-    logger.info("Val task counts: %s", summarize(val_records))
-    logger.info("Test task counts: %s", summarize(test_records))
+    train_task_counts = summarize(train_records)
+    val_task_counts = summarize(val_records)
+    test_task_counts = summarize(test_records)
+
+    logger.info("Train task counts: %s", train_task_counts)
+    logger.info("Val task counts: %s", val_task_counts)
+    logger.info("Test task counts: %s", test_task_counts)
     logger.info("Member canaries: %s", len(member_eval))
     logger.info("Reference canaries: %s", len(reference_eval))
     logger.info("Saved outputs to %s", output_dir)
+
+    return {
+        "seed": seed,
+        "output_dir": str(output_dir),
+        "train_task_counts": train_task_counts,
+        "val_task_counts": val_task_counts,
+        "test_task_counts": test_task_counts,
+        "num_member_canaries": len(member_eval),
+        "num_reference_canaries": len(reference_eval),
+        "num_train_records": len(train_records),
+        "num_val_records": len(val_records),
+        "num_test_records": len(test_records),
+        "canary_member_config": list(CANARY_MEMBER_CONFIG),
+        "canary_reference_count": CANARY_REFERENCE_COUNT,
+        "canary_isolation_validated": True,
+    }
+
+
+def main() -> None:
+    args = parse_args()
+    build_dataset(Path(args.output_dir), args.seed)
 
 
 if __name__ == "__main__":
