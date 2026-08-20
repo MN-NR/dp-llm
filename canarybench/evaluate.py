@@ -14,6 +14,7 @@ itself is still exactly metrics.privacy.extraction.pii_extraction_rate's
 existing single greedy completion (do_sample=False), unchanged.
 """
 
+import hashlib
 import random as _random
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence
@@ -24,6 +25,25 @@ from metrics.privacy.inference import run_wbc_attack
 from metrics.privacy.memorization import compute_canary_exposure, memorization_by_frequency, memorization_by_pii_type
 
 DEFAULT_FREQUENCY_TIERS = (1, 10, 50)
+
+# Two explicit, frozen evaluation modes. Mode A (mask_prompt=False) is the
+# primary metric for comparison against the submitted paper -- it must
+# never be silently swapped for Mode B. Mode B is a target-only robustness/
+# sensitivity check, computed and saved separately, never overwriting Mode A.
+MODE_A_HISTORICAL = {"label": "mode_a_historical_paper_compatible", "mask_prompt": False}
+MODE_B_TARGET_ONLY = {"label": "mode_b_target_only_sensitivity", "mask_prompt": True}
+
+
+def hash_dataset_files(paths: Sequence[str]) -> str:
+    """sha256 over the concatenated bytes of the given files, in the given
+    order. Used as a lightweight dataset-version fingerprint for result
+    provenance (not a merkle tree, just a reproducibility check: same
+    hash => byte-identical inputs)."""
+    digest = hashlib.sha256()
+    for path in paths:
+        with open(path, "rb") as f:
+            digest.update(f.read())
+    return digest.hexdigest()
 
 
 @dataclass
@@ -36,6 +56,10 @@ class EvaluationResult:
     frequency_breakdown: Dict[str, Any]
     pii_type_breakdown: Dict[str, Any]
     mask_prompt: bool
+    mode_label: str
+    member_path: str
+    reference_path: str
+    dataset_hash: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -47,6 +71,10 @@ class EvaluationResult:
             "frequency_breakdown": self.frequency_breakdown,
             "pii_type_breakdown": self.pii_type_breakdown,
             "mask_prompt": self.mask_prompt,
+            "mode_label": self.mode_label,
+            "member_path": self.member_path,
+            "reference_path": self.reference_path,
+            "dataset_hash": self.dataset_hash,
         }
 
 
@@ -143,7 +171,17 @@ def evaluate(
     generator for gap_by_frequency -- which computes loss with only padding
     masked (no prompt masking) at all. Pass mask_prompt=True explicitly if you
     want the target-only definition instead; it will not match the paper.
+
+    Use MODE_A_HISTORICAL / MODE_B_TARGET_ONLY's "mask_prompt" values
+    explicitly at call sites rather than relying on this default when you
+    need the mode recorded unambiguously in saved results.
     """
+    mode_label = MODE_A_HISTORICAL["label"] if mask_prompt is False else MODE_B_TARGET_ONLY["label"]
+    try:
+        dataset_hash = hash_dataset_files([artifacts.member_path, artifacts.reference_path])
+    except OSError:
+        dataset_hash = None
+
     loaded = load_causal_lm(base_model_path=base_model_path, adapter_path=adapter_path, device=device)
     member_canaries = load_jsonl(artifacts.member_path, max_samples=max_member_samples)
     reference_canaries = load_jsonl(artifacts.reference_path, max_samples=max_reference_samples)
@@ -193,4 +231,8 @@ def evaluate(
         frequency_breakdown=frequency_breakdown,
         pii_type_breakdown=pii_type_breakdown,
         mask_prompt=mask_prompt,
+        mode_label=mode_label,
+        member_path=artifacts.member_path,
+        reference_path=artifacts.reference_path,
+        dataset_hash=dataset_hash,
     )

@@ -524,7 +524,16 @@ def build_group_b(
     return train_records, val_records, test_records
 
 
-def build_canary_base_pool(seed: int, logger: logging.Logger) -> List[dict]:
+# Extra base rows pooled beyond the strict minimum, so the secret-value
+# collision avoidance in build_member_canaries/build_reference_canaries
+# below has bases to fall back to when a row's candidates all collide with
+# an already-used secret. Only ~19 collisions were observed historically
+# (out of 1770 canaries) so this margin is generous headroom, not a tight
+# budget.
+CANARY_BASE_POOL_MARGIN = 200
+
+
+def build_canary_base_pool(seed: int, logger: logging.Logger, margin: int = CANARY_BASE_POOL_MARGIN) -> List[dict]:
     logger.info("Building canary base pool from real masked AI4Privacy rows")
 
     dataset = load_dataset("ai4privacy/open-pii-masking-500k-ai4privacy")
@@ -534,6 +543,7 @@ def build_canary_base_pool(seed: int, logger: logging.Logger) -> List[dict]:
         sum(total_examples // exposure for total_examples, exposure in CANARY_MEMBER_CONFIG)
         + CANARY_REFERENCE_COUNT
     )
+    pool_target = required_unique + margin
     bases: List[dict] = []
 
     for idx, row in enumerate(en_data):
@@ -564,12 +574,12 @@ def build_canary_base_pool(seed: int, logger: logging.Logger) -> List[dict]:
                 "pii_candidates": pii_candidates,
             }
         )
-        if len(bases) >= required_unique:
+        if len(bases) >= pool_target:
             break
 
     if len(bases) < required_unique:
         raise ValueError(
-            f"Not enough canary base rows: need {required_unique}, found {len(bases)}"
+            f"Not enough canary base rows: need at least {required_unique}, found {len(bases)}"
         )
 
     return bases
@@ -608,17 +618,71 @@ def create_canary_record(
     }
 
 
-def build_member_canaries(canary_bases: Sequence[dict]) -> Tuple[List[dict], List[dict], List[dict]]:
+def _pick_non_colliding_candidate(base: dict, used_secrets: set) -> Optional[dict]:
+    """Picks a PII candidate from `base` whose secret value is not already
+    in `used_secrets`.
+
+    Matches the original `random.choice(base["pii_candidates"])` exactly
+    -- same single draw, same distribution, same RNG state contribution --
+    whenever that first draw doesn't collide with an already-used secret
+    (the overwhelming majority of bases). Only falls back to scanning the
+    base's other candidates when the first draw collides. Returns None if
+    every candidate in this base collides (caller should skip the base).
+    """
+    primary = random.choice(base["pii_candidates"])
+    if primary["value"] not in used_secrets:
+        return primary
+    remaining = [c for c in base["pii_candidates"] if c is not primary]
+    random.shuffle(remaining)
+    for candidate in remaining:
+        if candidate["value"] not in used_secrets:
+            return candidate
+    return None
+
+
+def build_member_canaries(
+    canary_bases: Sequence[dict],
+    used_secrets: set,
+) -> Tuple[List[dict], List[dict], List[dict], int, int]:
+    """Builds member canaries, consuming canary_bases sequentially from
+    index 0. Any base whose every PII candidate collides with an
+    already-used secret value is skipped (not reused later). `used_secrets`
+    is a set shared with build_reference_canaries's caller, so secret-value
+    uniqueness is enforced across BOTH member and reference canaries, not
+    just within each -- this also incidentally guarantees uniqueness within
+    the member set itself and within the reference set itself, a superset
+    of what was strictly required.
+
+    Returns (member_train_records, member_eval_records, registry,
+    next_cursor, num_bases_skipped) -- next_cursor is how many canary_bases
+    were consumed, so build_reference_canaries can continue from there
+    without ever reusing a base (preserving "member source rows != reference
+    source rows" even more strongly than the original fixed-slice approach).
+    """
     member_train_records: List[dict] = []
     member_eval_records: List[dict] = []
     registry: List[dict] = []
 
+    cursor = 0
+    skipped_bases = 0
     unique_idx = 0
     for total_examples, exposure in CANARY_MEMBER_CONFIG:
         distinct_count = total_examples // exposure
         for _ in range(distinct_count):
-            base = canary_bases[unique_idx]
-            candidate = random.choice(base["pii_candidates"])
+            while True:
+                if cursor >= len(canary_bases):
+                    raise ValueError(
+                        "Ran out of canary base rows while enforcing member/reference "
+                        "secret-value uniqueness during member canary construction. "
+                        "Increase CANARY_BASE_POOL_MARGIN."
+                    )
+                base = canary_bases[cursor]
+                cursor += 1
+                candidate = _pick_non_colliding_candidate(base, used_secrets)
+                if candidate is not None:
+                    break
+                skipped_bases += 1
+            used_secrets.add(candidate["value"])
             field_type = candidate["label"]
             secret = candidate["value"]
             prefix = candidate["prefix"]
@@ -660,21 +724,41 @@ def build_member_canaries(canary_bases: Sequence[dict]) -> Tuple[List[dict], Lis
             )
             unique_idx += 1
 
-    return member_train_records, member_eval_records, registry
+    return member_train_records, member_eval_records, registry, cursor, skipped_bases
 
 
 def build_reference_canaries(
     canary_bases: Sequence[dict],
     start_idx: int,
     count: int,
-) -> Tuple[List[dict], List[dict]]:
+    used_secrets: set,
+) -> Tuple[List[dict], List[dict], int, int]:
+    """Mirrors build_member_canaries's collision-avoidance: consumes
+    canary_bases sequentially starting at `start_idx` (the cursor
+    build_member_canaries left off at, so no base is ever reused), skipping
+    any base whose every candidate collides with `used_secrets` (shared
+    with the member stage). Returns (reference_records, registry,
+    next_cursor, num_bases_skipped)."""
     reference_records: List[dict] = []
     registry: List[dict] = []
 
+    cursor = start_idx
+    skipped_bases = 0
     for offset in range(count):
-        canary_idx = start_idx + offset
-        base = canary_bases[canary_idx]
-        candidate = random.choice(base["pii_candidates"])
+        while True:
+            if cursor >= len(canary_bases):
+                raise ValueError(
+                    "Ran out of canary base rows while enforcing member/reference "
+                    "secret-value uniqueness during reference canary construction. "
+                    "Increase CANARY_BASE_POOL_MARGIN."
+                )
+            base = canary_bases[cursor]
+            cursor += 1
+            candidate = _pick_non_colliding_candidate(base, used_secrets)
+            if candidate is not None:
+                break
+            skipped_bases += 1
+        used_secrets.add(candidate["value"])
         field_type = candidate["label"]
         secret = candidate["value"]
         prefix = candidate["prefix"]
@@ -703,7 +787,7 @@ def build_reference_canaries(
             }
         )
 
-    return reference_records, registry
+    return reference_records, registry, cursor, skipped_bases
 
 
 def validate_canary_isolation(
@@ -738,6 +822,29 @@ def validate_canary_isolation(
         )
 
 
+def validate_member_reference_uniqueness(canary_registry: Sequence[dict]) -> None:
+    """Defense-in-depth: explicitly assert what build_member_canaries /
+    build_reference_canaries's shared `used_secrets` set is already supposed
+    to guarantee by construction -- member source rows disjoint from
+    reference source rows, AND member secret values disjoint from reference
+    secret values. Raises loudly rather than silently trusting construction
+    logic."""
+    members = [item for item in canary_registry if item["is_member"]]
+    references = [item for item in canary_registry if not item["is_member"]]
+    member_sources = {str(item["source_text"]) for item in members}
+    reference_sources = {str(item["source_text"]) for item in references}
+    member_secrets = {str(item["secret"]) for item in members}
+    reference_secrets = {str(item["secret"]) for item in references}
+
+    source_overlap = member_sources & reference_sources
+    secret_overlap = member_secrets & reference_secrets
+    if source_overlap or secret_overlap:
+        raise ValueError(
+            "Member/reference uniqueness failed: "
+            f"{len(source_overlap)} source-row overlaps, {len(secret_overlap)} secret-value overlaps"
+        )
+
+
 def summarize(records: Sequence[dict]) -> Dict[str, int]:
     counts: Dict[str, int] = defaultdict(int)
     for record in records:
@@ -747,9 +854,19 @@ def summarize(records: Sequence[dict]) -> Dict[str, int]:
 
 def build_dataset(output_dir: Path, seed: int) -> Dict[str, Any]:
     """Build the full dataset (Group A + Group B + member/reference canaries)
-    and write it to `output_dir`. Extracted from the old `main()` body
-    unchanged (pure extraction, no behavioral change) so it can be called
-    in-process by canarybench.inject_canaries() as well as from the CLI.
+    and write it to `output_dir`. Originally extracted from the old
+    `main()` body unchanged; since then, member/reference canary
+    construction was changed to explicitly guarantee zero member/reference
+    secret-value overlap (previously only source-row disjointness was
+    guaranteed by construction; secret values could coincidentally collide
+    -- 19 such collisions were found in the dataset this replaces, all
+    short synthetic placeholder emails like "A@gmail.com" reused by
+    AI4Privacy's generator across unrelated rows, not source-row
+    duplication). See build_member_canaries/build_reference_canaries/
+    validate_member_reference_uniqueness. This changes canary_bases
+    consumption slightly (a handful of base rows get skipped when every
+    candidate in them collides) but does not change canary counts, tier
+    sizes, or task composition.
 
     Returns a summary dict (task counts, member/reference counts, and the
     validate_canary_isolation() result) -- the same information previously
@@ -765,13 +882,31 @@ def build_dataset(output_dir: Path, seed: int) -> Dict[str, Any]:
 
     group_a_train, group_a_val, group_a_test = build_group_a(seed, logger)
     canary_bases = build_canary_base_pool(seed, logger)
-    canary_train, member_eval, member_registry = build_member_canaries(canary_bases)
-    reference_eval, reference_registry = build_reference_canaries(
-        canary_bases=canary_bases,
-        start_idx=len(member_eval),
-        count=CANARY_REFERENCE_COUNT,
+
+    # Shared across member AND reference construction: guarantees
+    # set(member_secret_values) & set(reference_secret_values) == empty by
+    # construction (not a post-hoc filter), plus a disjoint-base cursor so
+    # member/reference source rows are never reused either.
+    used_secrets: set = set()
+    canary_train, member_eval, member_registry, canary_cursor, member_skipped = build_member_canaries(
+        canary_bases, used_secrets
     )
+    reference_eval, reference_registry, canary_cursor, reference_skipped = build_reference_canaries(
+        canary_bases=canary_bases,
+        start_idx=canary_cursor,
+        count=CANARY_REFERENCE_COUNT,
+        used_secrets=used_secrets,
+    )
+    if member_skipped or reference_skipped:
+        logger.info(
+            "Secret-value collision avoidance: skipped %s member-stage and %s reference-stage "
+            "base row(s) whose candidates all collided with an already-used secret; consumed "
+            "%s of %s pooled base rows",
+            member_skipped, reference_skipped, canary_cursor, len(canary_bases),
+        )
+
     registry = member_registry + reference_registry
+    validate_member_reference_uniqueness(registry)
     reserved_source_texts = {str(item["source_text"]) for item in registry}
     reserved_secrets = {str(item["secret"]) for item in registry}
     group_b_train, group_b_val, group_b_test = build_group_b(
@@ -835,6 +970,11 @@ def build_dataset(output_dir: Path, seed: int) -> Dict[str, Any]:
         "canary_member_config": list(CANARY_MEMBER_CONFIG),
         "canary_reference_count": CANARY_REFERENCE_COUNT,
         "canary_isolation_validated": True,
+        "member_reference_uniqueness_validated": True,
+        "canary_base_rows_skipped_member_stage": member_skipped,
+        "canary_base_rows_skipped_reference_stage": reference_skipped,
+        "canary_base_rows_consumed": canary_cursor,
+        "canary_base_pool_size": len(canary_bases),
     }
 
 
