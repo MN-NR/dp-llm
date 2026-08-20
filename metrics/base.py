@@ -9,52 +9,22 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 import numpy as np
 import torch
 
-
-RESPONSE_PREFIX = "\n\n### Response:\n"
+# Canonical prompt/target formatting now lives in canarybench.prompt_format,
+# shared with finetune/dataset.py (the training-data formatter). Re-exported
+# here under the original names so existing `from metrics.base import ...`
+# call sites keep working unchanged.
+from canarybench.prompt_format import (  # noqa: F401
+    RESPONSE_PREFIX,
+    build_generation_prompt,
+    build_supervised_text,
+    tokenizer_uses_chat_template,
+)
 
 
 @dataclass
 class LoadedModel:
     model: Any
     tokenizer: Any
-
-
-def tokenizer_uses_chat_template(tokenizer: Any) -> bool:
-    return bool(getattr(tokenizer, "chat_template", None))
-
-
-def build_generation_prompt(tokenizer: Any, prompt: str) -> str:
-    if tokenizer_uses_chat_template(tokenizer):
-        return tokenizer.apply_chat_template(
-            [{"role": "user", "content": prompt}],
-            tokenize=False,
-            add_generation_prompt=True,
-        )
-    return prompt
-
-
-def build_supervised_text(tokenizer: Any, record: Dict[str, Any]) -> Tuple[str, str]:
-    prompt = record.get("input", "")
-    target = record.get("target", "")
-    if record.get("task") == "lm" or not prompt.strip():
-        return "", target
-    if tokenizer_uses_chat_template(tokenizer):
-        full_text = tokenizer.apply_chat_template(
-            [
-                {"role": "user", "content": prompt},
-                {"role": "assistant", "content": target},
-            ],
-            tokenize=False,
-            add_generation_prompt=False,
-        )
-        prompt_only = tokenizer.apply_chat_template(
-            [{"role": "user", "content": prompt}],
-            tokenize=False,
-            add_generation_prompt=True,
-        )
-        return prompt_only, full_text
-    prompt_only = f"{prompt}{RESPONSE_PREFIX}"
-    return prompt_only, f"{prompt_only}{target}"
 
 
 def load_jsonl(path: str, max_samples: Optional[int] = None) -> List[Dict[str, Any]]:
@@ -172,8 +142,14 @@ def generate_completion(
     max_new_tokens: int = 64,
     do_sample: bool = False,
     temperature: float = 1.0,
+    already_formatted: bool = False,
 ) -> str:
-    prompt = build_generation_prompt(tokenizer, prompt)
+    """already_formatted=True skips build_generation_prompt's own chat-template
+    wrapping, for callers that already built the exact training-consistent
+    prompt themselves (e.g. via canarybench.prompt_format.build_supervised_text's
+    prompt_only) and would otherwise get it wrapped a second time."""
+    if not already_formatted:
+        prompt = build_generation_prompt(tokenizer, prompt)
     encoded = tokenizer(
         prompt,
         return_tensors="pt",

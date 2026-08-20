@@ -54,6 +54,14 @@ class TrainingConfig:
     pilot_epochs:      int   = 1
 
     # ── Paths ──────────────────────────────────────────────────
+    # STALE DEFAULTS: data_prep/Dataset/final/... does not exist in this
+    # checkout (only data_prep_invalid/ does) -- these are leftover
+    # defaults from an older dataset pipeline. Every MODELS entry except
+    # llama3_2_1b_it inherits them unchanged, so any run of that model
+    # config MUST override these four paths (via --train-path/--val-path/
+    # --canary-path/--reference-path, or from canarybench.inject_canaries()'s
+    # returned artifacts) or it will fail via require_dataset_paths() below
+    # rather than silently training on the wrong/missing data.
     train_path:          str = repo_path("data_prep", "Dataset", "final", "combined_train.jsonl")
     val_path:            str = repo_path("data_prep", "Dataset", "final", "combined_val.jsonl")
     canary_path:         str = repo_path("data_prep", "Dataset", "final", "member_canaries.jsonl")
@@ -65,6 +73,35 @@ class TrainingConfig:
     # ── Canary eval settings ────────────────────────────────────
     canary_eval_samples: int = 500   # bumped from 200 — you have 7,250 unique members
     eval_canaries:       bool = True
+
+
+def require_dataset_paths(cfg: "TrainingConfig") -> None:
+    """Fail loudly, before any model/data loading, if this config's core
+    dataset paths don't exist on disk.
+
+    Does NOT guess or silently redirect to any particular dataset (e.g. it
+    will not fall back to instruction_recall_dataset/dataset/processed/ or
+    any other path) -- it only checks that whatever IS configured actually
+    exists, and raises a clear, actionable error naming exactly which
+    path(s) are missing if not.
+    """
+    required = {
+        "train_path": cfg.train_path,
+        "val_path": cfg.val_path,
+        "canary_path": cfg.canary_path,
+        "reference_path": cfg.reference_path,
+    }
+    missing = {name: path for name, path in required.items() if not os.path.exists(path)}
+    if missing:
+        lines = "\n".join(f"  --{name.replace('_', '-')}: {path}" for name, path in missing.items())
+        raise FileNotFoundError(
+            "TrainingConfig has dataset path(s) that do not exist on disk:\n"
+            f"{lines}\n"
+            "finetune/config.py's built-in defaults point at data_prep/Dataset/final/..., "
+            "an older dataset pipeline not present in this checkout. Pass real paths "
+            "explicitly via the CLI flags above, e.g. the InjectionArtifacts "
+            "returned by canarybench.inject_canaries()."
+        )
 
 
 # ── Model registry — updated for 2x L40S (46GB each) ──────────────────────────

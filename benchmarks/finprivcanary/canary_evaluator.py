@@ -6,8 +6,15 @@ and compute various metrics for privacy analysis.
 """
 
 import os
+import sys
 import json
 from typing import List, Dict, Optional, Any
+
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from canarybench.prompt_format import build_supervised_text, legacy_hardcoded_supervised_text
 
 
 def compute_loss_statistics(member_losses: List[Dict], reference_losses: List[Dict]) -> Dict[str, float]:
@@ -85,19 +92,28 @@ def load_canary_records(canary_path: str, max_samples: Optional[int] = None) -> 
     return records
 
 
-def encode_canary_for_evaluation(canary_record: Dict, tokenizer: Any) -> Dict:
+def encode_canary_for_evaluation(canary_record: Dict, tokenizer: Any, prompt_mode: str = "canonical") -> Dict:
     """
     Encode a single canary record for evaluation.
-    
+
     Args:
         canary_record: Canary record with input and target
         tokenizer: The tokenizer
-        
+        prompt_mode: "canonical" (default, chat-template-aware, matches training)
+            or "legacy_hardcoded" (old unconditional "### Response:\n" template,
+            for reproducing historical results exactly). Previously this
+            function always used the legacy template regardless of tokenizer;
+            this function has no callers anywhere in the current repo (dead
+            code), so the default change here has no observed effect on any
+            existing pipeline.
+
     Returns:
         Encoded canary with token_ids
     """
-    prompt = canary_record["input"] + "\n\n### Response:\n"
-    full   = prompt + canary_record["target"]
+    if prompt_mode == "legacy_hardcoded":
+        _, full = legacy_hardcoded_supervised_text(canary_record)
+    else:
+        _, full = build_supervised_text(tokenizer, canary_record)
     enc = tokenizer(
         full,
         return_tensors="pt",

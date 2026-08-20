@@ -45,7 +45,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from config import MODELS, TrainingConfig
+from config import MODELS, TrainingConfig, require_dataset_paths
 from canary_eval import evaluate_canaries_full_sequence
 from dataset import MultiTaskDataset
 from benchmarks.finprivcanary import (
@@ -720,4 +720,5 @@ if __name__ == "__main__":
     if args.results_dir:
         cfg.results_dir = args.results_dir
 
+    require_dataset_paths(cfg)
     train_dp(cfg, epsilon=args.epsilon, pilot=args.pilot, seed=args.seed)

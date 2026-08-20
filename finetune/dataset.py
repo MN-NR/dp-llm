@@ -1,8 +1,16 @@
 import json
+import os
+import sys
 import torch
 from torch.utils.data import Dataset
 from collections import Counter
 from torch.utils.data import WeightedRandomSampler
+
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from canarybench.prompt_format import build_supervised_text
 
 
 def make_weighted_sampler(records, group_weights):
@@ -56,34 +64,13 @@ class MultiTaskDataset(Dataset):
         return len(self.records)
 
     def _format_record(self, rec):
-        # Language modeling records are trained on raw text without a prompt.
-        if rec.get("task") == "lm" or not rec.get("input", "").strip():
-            return rec["target"], ""
-
-        has_chat = (
-            hasattr(self.tokenizer, "chat_template") and
-            self.tokenizer.chat_template is not None
-        )
-
-        if has_chat:
-            messages = [
-                {"role": "user", "content": rec["input"]},
-                {"role": "assistant", "content": rec["target"]},
-            ]
-            full_text = self.tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=False,
-            )
-            prompt_only = self.tokenizer.apply_chat_template(
-                [{"role": "user", "content": rec["input"]}],
-                tokenize=False,
-                add_generation_prompt=True,
-            )
-            return full_text, prompt_only
-
-        prompt_only = rec["input"] + "\n\n### Response:\n"
-        return prompt_only + rec["target"], prompt_only
+        # Delegates to canarybench.prompt_format.build_supervised_text, the
+        # single canonical formatter shared with evaluation (metrics/base.py).
+        # Note the returned tuple order there is (prompt_only, full_text) --
+        # opposite of this method's historical (full_text, prompt_only) --
+        # so we swap it here to keep this method's own call sites unchanged.
+        prompt_only, full_text = build_supervised_text(self.tokenizer, rec)
+        return full_text, prompt_only
 
     def __getitem__(self, idx):
         rec = self.records[idx]

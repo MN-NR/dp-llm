@@ -9,6 +9,7 @@ This module provides the CrashSafeCallback class that handles:
 """
 
 import os
+import sys
 import json
 import logging
 from datetime import datetime
@@ -16,6 +17,12 @@ from typing import List, Dict, Optional, Any
 
 import torch
 from opacus import PrivacyEngine
+
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from canarybench.prompt_format import build_supervised_text, legacy_hardcoded_supervised_text
 
 
 logger = logging.getLogger("dp_lora")
@@ -160,32 +167,48 @@ class CrashSafeCallback:
                    f"ref={record['reference_loss_mean']}")
 
 
-def load_canaries_for_checkpointing(canary_path: str, reference_path: str, 
-                                   tokenizer: Any, max_samples: int = 200) -> tuple:
+def load_canaries_for_checkpointing(canary_path: str, reference_path: str,
+                                   tokenizer: Any, max_samples: int = 200,
+                                   prompt_mode: str = "canonical") -> tuple:
     """Load canaries for crash-safe checkpointing.
-    
+
     Args:
         canary_path: Path to member canaries file
-        reference_path: Path to reference canaries file  
+        reference_path: Path to reference canaries file
         tokenizer: Tokenizer for encoding canaries
         max_samples: Maximum number of canaries to load
-        
+        prompt_mode: "canonical" (default, chat-template-aware, matches training
+            via canarybench.prompt_format.build_supervised_text) or
+            "legacy_hardcoded" (old unconditional "### Response:\n" template,
+            for reproducing historical audit logs/recovery checkpoints exactly).
+            Bugfix note: previously this always used the legacy template
+            regardless of tokenizer chat_template, so for chat-template models
+            the token_ids fed into CrashSafeCallback's audit-log loss / epsilon-
+            target-checkpoint loss did not match training format. This affects
+            only the recovery/audit-log side channel, not the training loss
+            itself (finetune/dataset.py) or "best" checkpoint selection.
+
     Returns:
         Tuple of (member_canaries, reference_canaries)
     """
+    formatter = legacy_hardcoded_supervised_text if prompt_mode == "legacy_hardcoded" else None
+
+    def _full_text(rec):
+        if formatter is not None:
+            _, full = formatter(rec)
+        else:
+            _, full = build_supervised_text(tokenizer, rec)
+        return full
+
     member_canaries = []
     reference_canaries = []
-    
+
     # Load member canaries
     if os.path.exists(canary_path):
         with open(canary_path) as f:
             member_records = [json.loads(l) for l in f if l.strip()]
         for rec in member_records[:max_samples]:
-            if rec.get("task") == "lm" or not rec.get("input", "").strip():
-                full = rec["target"]
-            else:
-                prompt = rec["input"] + "\n\n### Response:\n"
-                full = prompt + rec["target"]
+            full = _full_text(rec)
             enc = tokenizer(
                 full,
                 return_tensors="pt",
@@ -200,17 +223,13 @@ def load_canaries_for_checkpointing(canary_path: str, reference_path: str,
                 "repetitions": rec.get("repetitions", 1)
             })
         logger.info(f"Loaded {len(member_canaries)} member canaries")
-    
-    # Load reference canaries  
+
+    # Load reference canaries
     if os.path.exists(reference_path):
         with open(reference_path) as f:
             reference_records = [json.loads(l) for l in f if l.strip()]
         for rec in reference_records[:max_samples]:
-            if rec.get("task") == "lm" or not rec.get("input", "").strip():
-                full = rec["target"]
-            else:
-                prompt = rec["input"] + "\n\n### Response:\n"
-                full = prompt + rec["target"]
+            full = _full_text(rec)
             enc = tokenizer(
                 full,
                 return_tensors="pt",
@@ -223,5 +242,5 @@ def load_canaries_for_checkpointing(canary_path: str, reference_path: str,
                 "token_ids": enc["input_ids"][0].tolist()
             })
         logger.info(f"Loaded {len(reference_canaries)} reference canaries")
-    
+
     return member_canaries, reference_canaries
