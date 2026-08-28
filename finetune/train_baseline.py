@@ -467,11 +467,27 @@ if __name__ == "__main__":
     parser.add_argument("--canary-registry-path", type=str, default=None)
     parser.add_argument("--output-base", type=str, default=None)
     parser.add_argument("--results-dir", type=str, default=None)
+    parser.add_argument("--batch-size", type=int, default=None,
+                        help="Override config's per-device batch_size")
+    parser.add_argument("--grad-accum", type=int, default=None,
+                        help="Override config's grad_accum")
+    parser.add_argument("--learning-rate", type=float, default=None,
+                        help="Override config's learning_rate")
+    parser.add_argument("--epochs", type=int, default=None,
+                        help="Override config's num_epochs")
     args = parser.parse_args()
 
     cfg = replace(MODELS[args.model])
     if args.hf_token:
         cfg.hf_token = args.hf_token
+    if args.batch_size:
+        cfg.batch_size = args.batch_size
+    if args.grad_accum:
+        cfg.grad_accum = args.grad_accum
+    if args.learning_rate:
+        cfg.learning_rate = args.learning_rate
+    if args.epochs:
+        cfg.num_epochs = args.epochs
     if args.train_path:
         cfg.train_path = args.train_path
     if args.val_path:

@@ -52,8 +52,16 @@ def build_supervised_text(tokenizer: Any, record: Dict[str, Any]) -> Tuple[str, 
     """
     prompt = record.get("input", "")
     target = record.get("target", "")
+    # Chat-template-formatted turns already end with the template's own
+    # turn-termination token when add_generation_prompt=False, so EOS is not
+    # appended a second time there. The fallback ("### Response:") path has
+    # no such terminator of its own -- tokenizer.add_eos_token is False for
+    # GemmaTokenizer, so without this the target was never followed by EOS
+    # anywhere in the training signal, and the model was never shown an
+    # example of stopping. See EXPERIMENT_LOG.md for how this was found.
+    eos = tokenizer.eos_token or ""
     if record.get("task") == "lm" or not prompt.strip():
-        return "", target
+        return "", f"{target}{eos}"
     if tokenizer_uses_chat_template(tokenizer):
         full_text = tokenizer.apply_chat_template(
             [
@@ -70,7 +78,7 @@ def build_supervised_text(tokenizer: Any, record: Dict[str, Any]) -> Tuple[str, 
         )
         return prompt_only, full_text
     prompt_only = f"{prompt}{RESPONSE_PREFIX}"
-    return prompt_only, f"{prompt_only}{target}"
+    return prompt_only, f"{prompt_only}{target}{eos}"
 
 
 def legacy_hardcoded_prompt(record: Dict[str, Any]) -> str:

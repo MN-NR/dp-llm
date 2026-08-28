@@ -239,7 +239,16 @@ def train_dp_ddp(
         cfg.pilot_val_size     = 250    # keep val small
         cfg.num_epochs         = 1      # just 1 epoch
 
-    run_tag    = f"dp_eps{epsilon}_seed{seed}_2gpu"
+    # Batch size AND epoch count are both included so distinct experiments
+    # never collide on the same output_dir. Batch size was added first (a
+    # batch256 run would otherwise silently overwrite a batch128 checkpoint
+    # at the same epsilon); epoch count was added after an epochs=12 run
+    # silently overwrote an epochs=8 checkpoint's weights at this same path
+    # (caught via file mtimes, not before it happened -- see
+    # EXPERIMENT_LOG.md's epoch-horizon-sweep section). cfg.num_epochs here
+    # already reflects the pilot override above when pilot=True.
+    global_batch_size = cfg.batch_size * cfg.grad_accum
+    run_tag    = f"dp_eps{epsilon}_seed{seed}_batch{global_batch_size}_epochs{cfg.num_epochs}_2gpu"
     if pilot:
         run_tag += "_pilot"
     output_dir = os.path.join(cfg.output_base, cfg.model_key, run_tag)
@@ -744,6 +753,10 @@ def main():
                              "batch = batch_size * grad_accum, split across both GPUs by DPDDP)")
     parser.add_argument("--grad-accum", type=int, default=None,
                         help="Override config's grad_accum")
+    parser.add_argument("--learning-rate", type=float, default=None,
+                        help="Override config's learning_rate")
+    parser.add_argument("--epochs", type=int, default=None,
+                        help="Override config's num_epochs")
     args = parser.parse_args()
 
     if int(os.environ.get("WORLD_SIZE", "1")) != 2:
@@ -782,6 +795,10 @@ def main():
             cfg.batch_size = args.batch_size
         if args.grad_accum:
             cfg.grad_accum = args.grad_accum
+        if args.learning_rate:
+            cfg.learning_rate = args.learning_rate
+        if args.epochs:
+            cfg.num_epochs = args.epochs
 
         require_dataset_paths(cfg)
         train_dp_ddp(cfg, epsilon=args.epsilon, pilot=args.pilot, seed=args.seed)
