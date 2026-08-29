@@ -230,6 +230,8 @@ def train_dp_ddp(
     epsilon: float,
     pilot: bool = False,
     seed: int = 42,
+    max_steps: int = None,
+    save_every_epoch: bool = False,
 ):
     device = torch.device(f"cuda:{torch.cuda.current_device()}")
 
@@ -477,6 +479,9 @@ def train_dp_ddp(
     epoch_results = []
     all_step_losses = []
     global_step = 0
+    bench_nonfinite_count = 0
+    if max_steps and _rank_zero():
+        logger.info(f"BENCH_LOOP_START {time.time():.4f}")
 
     for epoch in range(cfg.num_epochs):
         model.train()
@@ -506,9 +511,22 @@ def train_dp_ddp(
                     global_step += 1
 
                 loss_val = loss.item()
+                if max_steps and not (loss_val == loss_val and abs(loss_val) != float("inf")):
+                    bench_nonfinite_count += 1
                 del outputs, loss
                 if physical_step % 50 == 0 and device.type == "cuda":
                     torch.cuda.empty_cache()
+
+                if max_steps and global_step >= max_steps:
+                    # Throughput-benchmark early exit: skip this epoch's
+                    # validation/canary-eval entirely and fall straight to
+                    # the Final save section below, which still reports
+                    # peak_gpu_mem_gb, noise_multiplier, and train_runtime_sec
+                    # -- everything a throughput benchmark needs. Training/DP
+                    # math up to this point is completely unmodified.
+                    if _rank_zero():
+                        logger.info(f"BENCH_LOOP_END {time.time():.4f} steps={global_step} nonfinite={bench_nonfinite_count}")
+                    break
 
                 # Checkpoint and log only after a complete logical DP step,
                 # on rank 0 only.
@@ -571,6 +589,9 @@ def train_dp_ddp(
                         "gpu_allocated_gb": round(gpu_allocated, 2),
                         "gpu_reserved_gb": round(gpu_reserved, 2),
                     })
+
+        if max_steps and global_step >= max_steps:
+            break
 
         # ── End of epoch: aggregate train loss across ranks ─────────────────
         dist.all_reduce(epoch_loss_count, op=dist.ReduceOp.SUM)
@@ -658,6 +679,17 @@ def train_dp_ddp(
                 bare_model.save_pretrained(best_dir)
                 tokenizer.save_pretrained(best_dir)
                 logger.info(f"  ✅ Best model saved  val_loss={val_loss:.4f}")
+
+            # Opt-in: save every epoch's weights unconditionally (not just
+            # "best"), so a later epoch-horizon comparison can evaluate each
+            # epoch's checkpoint independently instead of only the final/best
+            # one. Off by default -- does not change behavior for any run
+            # that doesn't pass --save-every-epoch.
+            if save_every_epoch:
+                epoch_dir = os.path.join(output_dir, f"epoch_{epoch + 1}")
+                bare_model.save_pretrained(epoch_dir)
+                tokenizer.save_pretrained(epoch_dir)
+                logger.info(f"  Epoch {epoch + 1} checkpoint saved → {epoch_dir}")
         dist.barrier()
 
     # ── Final save (rank 0 only) ────────────────────────────────────────────────
@@ -757,6 +789,14 @@ def main():
                         help="Override config's learning_rate")
     parser.add_argument("--epochs", type=int, default=None,
                         help="Override config's num_epochs")
+    parser.add_argument("--physical-batch-size", type=int, default=None,
+                        help="Override config's dp_physical_batch_size (BatchMemoryManager cap per rank)")
+    parser.add_argument("--max-steps", type=int, default=None,
+                        help="Throughput-benchmark only: exit after this many logical/optimizer "
+                             "steps, skipping validation/canary-eval. Does not change DP math.")
+    parser.add_argument("--save-every-epoch", action="store_true",
+                        help="Save every epoch's weights (not just best/final) to "
+                             "output_dir/epoch_N/, for post-hoc per-epoch evaluation.")
     args = parser.parse_args()
 
     if int(os.environ.get("WORLD_SIZE", "1")) != 2:
@@ -799,9 +839,14 @@ def main():
             cfg.learning_rate = args.learning_rate
         if args.epochs:
             cfg.num_epochs = args.epochs
+        if args.physical_batch_size:
+            cfg.dp_physical_batch_size = args.physical_batch_size
 
         require_dataset_paths(cfg)
-        train_dp_ddp(cfg, epsilon=args.epsilon, pilot=args.pilot, seed=args.seed)
+        train_dp_ddp(
+            cfg, epsilon=args.epsilon, pilot=args.pilot, seed=args.seed,
+            max_steps=args.max_steps, save_every_epoch=args.save_every_epoch,
+        )
     finally:
         dist.destroy_process_group()
 

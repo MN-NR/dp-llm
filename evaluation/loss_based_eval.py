@@ -34,7 +34,7 @@ def _build_prompt(tokenizer, input_text: str) -> str:
     return input_text + "\n\n### Response:\n"
 
 
-def _avg_label_loss(
+def _avg_label_loss_legacy(
     model,
     tokenizer,
     device: str,
@@ -44,8 +44,31 @@ def _avg_label_loss(
     max_length: int = 512,
 ) -> float:
     """
-    Compute average token loss for `label` when appended after `prompt`.
-    Only label tokens contribute to the loss; prompt tokens are ignored.
+    DEPRECATED -- kept only so any historical result computed with this
+    function can still be reproduced exactly on request. DO NOT use this
+    for new evaluation; see `_avg_label_loss` (the corrected replacement)
+    below.
+
+    Bug (found and confirmed 2026-08-29, see EXPERIMENT_LOG.md's "AG
+    News/MNLI evaluator repair" section): tokenizes with
+    add_special_tokens=False, omitting the BOS token. But
+    finetune/dataset.py's MultiTaskDataset.__getitem__ -- the actual
+    training-time encoding -- tokenizes the model's real input with the
+    tokenizer's default (add_special_tokens=True, BOS included). Every
+    score this function ever produced was computed in an
+    out-of-distribution regime the model was never trained on. Controlled
+    A/B test on the epochs=12 EOS-fixed checkpoint, same model/input, only
+    BOS differing: NLL for the correct AG News label "Business" was 14.44
+    without BOS (probability ~5e-7) vs. 1.125 with BOS (normal, confident).
+    This explains the severe label-string-prior collapse this function
+    produced (e.g. AG News collapsing to "Sci/Tech", MNLI disfavoring
+    "neutral") -- it wasn't a real prior, it was noise from a broken input
+    format, and different labels "won" that noise inconsistently across
+    checkpoints/methods.
+
+    Original docstring: "Compute average token loss for `label` when
+    appended after `prompt`. Only label tokens contribute to the loss;
+    prompt tokens are ignored."
     """
     prompt_ids = tokenizer(
         prompt,
@@ -62,6 +85,74 @@ def _avg_label_loss(
         truncation=True,
         max_length=max_length,
         add_special_tokens=False,
+    )
+    input_ids = full["input_ids"].to(device)
+    attention_mask = full.get("attention_mask")
+    if attention_mask is not None:
+        attention_mask = attention_mask.to(device)
+
+    prompt_len = int(prompt_ids.shape[1])
+    labels = input_ids.clone()
+    if prompt_len > 0:
+        labels[:, :prompt_len] = -100
+
+    with torch.no_grad():
+        outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+
+    shift_logits = outputs.logits[..., :-1, :].contiguous()
+    shift_labels = labels[..., 1:].contiguous()
+
+    loss_fct = torch.nn.CrossEntropyLoss(reduction="none", ignore_index=-100)
+    per_token = loss_fct(
+        shift_logits.view(-1, shift_logits.size(-1)),
+        shift_labels.view(-1),
+    ).view(1, -1)
+
+    mask = (shift_labels != -100).float()
+    denom = mask.sum().clamp(min=1.0)
+    return float((per_token * mask).sum() / denom)
+
+
+def _avg_label_loss(
+    model,
+    tokenizer,
+    device: str,
+    prompt: str,
+    label: str,
+    *,
+    max_length: int = 512,
+) -> float:
+    """
+    Compute average token loss for `label` when appended after `prompt`.
+    Only label tokens contribute to the loss; prompt tokens are ignored.
+
+    Corrected (2026-08-29) to match finetune/dataset.py's actual training
+    tokenization: the full prompt+label sequence is tokenized with
+    add_special_tokens=True (the tokenizer's default), so it starts with a
+    BOS token exactly as every real training example did. `prompt_len` is
+    still computed from the prompt tokenized alone with
+    add_special_tokens=False, matching MultiTaskDataset.__getitem__'s own
+    prompt_len computation used for its label-masking boundary. See
+    `tests/test_label_loss_matches_training_tokenization.py` for a
+    regression test asserting this matches real MultiTaskDataset output
+    token-for-token. The old, BOS-omitting implementation is preserved as
+    `_avg_label_loss_legacy` above for reproducing historical results only.
+    """
+    prompt_ids = tokenizer(
+        prompt,
+        return_tensors="pt",
+        truncation=True,
+        max_length=max_length,
+        add_special_tokens=False,
+    )["input_ids"]
+
+    full_text = prompt + label
+    full = tokenizer(
+        full_text,
+        return_tensors="pt",
+        truncation=True,
+        max_length=max_length,
+        add_special_tokens=True,
     )
     input_ids = full["input_ids"].to(device)
     attention_mask = full.get("attention_mask")

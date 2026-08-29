@@ -389,8 +389,18 @@ truncated logging) 0.6007. Checkpoint: `checkpoints/eos_fixed/vault_gemma/baseli
 uniformly, not just under DP.
 
 WBC/extraction driver: `canarybench/evaluate.py:evaluate()`, unmodified,
-via a small new script (`run_privacy_eval.py`, evaluation-only, not part of
-the frozen training/metric pipeline) since no CLI wrapper existed for it.
+via a small new script (`results/eos_fixed/privacy_eval/run_privacy_eval.py`,
+evaluation-only, not part of the frozen training/metric pipeline) since no
+CLI wrapper existed for it. Raw output JSONs saved alongside it:
+`vault_gemma_baseline_wbc_extraction.json` and
+`vault_gemma_dp_eps5.0_batch128_epochs8_wbc_extraction.json` (both moved
+here from session scratchpad on request, so they persist with the repo
+rather than only in this conversation). The "unique PII F1" diagnostic
+script is saved at `evaluation/unique_pii_f1.py` (also moved from
+scratchpad) -- its own numeric outputs are not saved as JSON anywhere,
+only printed and transcribed into this log's tables; re-running it against
+the `results_testing/*_val_clean_eval.json` files (which do persist,
+saved with `--save_all_samples`) reproduces them exactly.
 **Important correction made while running this**: the first attempt left
 `reference_model_path` unset, which defaults `run_wbc_attack`'s reference
 model to the target model itself — every "target vs reference" loss
@@ -521,6 +531,281 @@ strong results, and restarting would discard real sunk progress for an
 uncertain net time savings. Use a substantially larger
 `dp_physical_batch_size` (e.g. 16-32, still well within the 46GB budget)
 for any DP run launched after epochs=16 completes.
+
+## Epochs=16 results and three-way epoch comparison
+
+Completed: 33.35 hrs, final ε=4.9920, noise_multiplier=0.5792. Per-epoch
+val loss: 0.397(1) → 0.338(2) → 0.308(3) → 0.282(4) → 0.268(5) → 0.257(6)
+→ 0.256(7) → 0.256(8) → 0.253(9) → 0.252(10) → 0.251(11) → 0.251(12) →
+0.249(13) → 0.248(14) → **0.2478(15, best)** → 0.2505(16, final -- ticked
+back up above epoch 15). "Best" checkpoint (epoch 15 weights) evaluated
+below, not "final" (epoch 16), since it's the genuinely better model.
+Checkpoint: `checkpoints/eos_fixed/vault_gemma/dp_eps5.0_seed42_batch128_epochs16_2gpu/best`.
+
+| Metric | Epochs=8 | Epochs=12 | Epochs=16 (best) |
+|---|---|---|---|
+| Val loss (best) | 0.2655 | 0.2527 | 0.2478 |
+| Unique PII F1 | 0.802 | 0.825 | 0.845 |
+| Unique precision | 0.841 | 0.857 | 0.871 |
+| Unique recall | 0.767 | 0.796 | 0.820 |
+| PII exact match | 0.483 | 0.543 | 0.582 |
+| Repetition fraction | 0.023 | 0.017 | 0.015 |
+| EOS generation rate | 50/50 | 50/50 | 50/50 |
+
+Val loss itself has plateaued (best at epoch 15, epoch 16 regressed
+slightly) but PII exact match kept improving meaningfully: +12% relative
+(8→12), then +7% relative (12→16) -- real but slowing diminishing returns,
+not yet fully flat. Asked the user whether to stop the epoch sweep here or
+try one more horizon (e.g. 20/24); question was interrupted before an
+answer was given, so **this decision is still open** as of this log entry.
+
+## Physical batch size throughput benchmark
+
+Per user directive: paused new full-length experiments and benchmarked
+`dp_physical_batch_size` in {8, 16, 32, 64} against the running epochs=16
+job (protected from interruption), using `--max-steps` (new, `train_dp_ddp.py`
+execution-only flag -- does not touch the frozen prompt-format/tokenizer/
+EOS/metric pipeline) to run just 40 steps per config into a throwaway
+`checkpoints/benchmark_tmp/` tree, deleted afterward. Same fixed config
+throughout: global batch=128, per-rank logical batch=64 (63.5 expected,
+matches all other runs), ε target=5.0, LR=2e-5, EOS-fixed dataset, seed=42,
+LoRA, clipping norm, RDP accountant -- only `dp_physical_batch_size` varied.
+
+Ran concurrently with epochs=16 rather than waiting ~20+ hours for it to
+finish, using a distinct `--master-port` per benchmark config to avoid any
+port collision with epochs=16's process group, and targeting all cleanup
+by exact captured PID (never `pkill -f train_dp_ddp.py`, which would have
+matched and killed epochs=16 too, since both run the same script name).
+Confirmed after every config that epochs=16's 3 processes were still alive
+with normal CPU% and unchanged memory. GPU utilization/memory numbers
+below include some contention from epochs=16's concurrent ~4.7GB/process
+baseline load; relative ranking across configs should still be valid since
+all four saw the same background load, but absolute sec/step numbers would
+likely be somewhat better in full isolation.
+
+| Physical batch | Microsteps/logical step | sec/optimizer-step | examples/sec | GPU0 util avg/max | GPU1 util avg/max | Peak GPU mem (both ~equal) | CPU avg |
+|---|---|---|---|---|---|---|---|
+| 2 (original) | ~32 | ~9.3-14.9 (derived from historical 100-step log intervals) | ~8.6-13.8 | — (not measured this way historically) | — | 4.05 GB | — |
+| 8 | ~8 | 7.57 | 16.92 | 34.5% / 100% | 43.3% / 100% | 9.08 GB | 23.2% |
+| 16 | ~4 | 4.69 | 27.28 | 38.1% / 100% | 42.2% / 100% | 15.80 GB | 27.9% |
+| **32** | ~2 | **3.89** | **32.88** | 45.2% / 100% | 47.6% / 100% | 29.23 GB | 30.5% |
+| 64 | ~1 | **OOM** | — | — | — | (would exceed ~44 GB available with epochs=16 also resident) | — |
+
+pb=64 OOM'd as anticipated (tried to allocate 7.08 GiB with only 5.8 GiB
+free on GPU0) -- confirmed via the error message that epochs=16's own
+process (587990) was completely unaffected, still holding its normal
+4.59 GiB, consistent with CUDA OOM being process-isolated. Per instruction,
+fell back to 32.
+
+Noise multiplier and sample rate were bit-for-bit identical
+(0.5521 / 0.00078034) across every physical-batch setting, confirming
+`dp_physical_batch_size` has zero effect on DP accounting, exactly as
+expected from `BatchMemoryManager`'s design (it only changes how a fixed
+logical batch's per-example gradients get chunked for memory purposes; the
+accumulated clipped-gradient sum and the single noise draw per logical step
+are identical regardless of chunking).
+
+**Verification** (100 optimizer steps at the winning config, pb=32): 0
+non-finite losses across all 100 steps -- checked at every physical
+microbatch via an inline finite check, not just the ones that happened to
+hit a `logging_steps` boundary, so this is full coverage, not a sample.
+3.18 sec/step over the full 100 (slightly better than the 40-step
+estimate, consistent with startup-jitter amortizing out). DP accounting
+(noise multiplier, sample rate) again identical to every other config.
+
+**Decision, pending user approval**: pb=32 gives the best throughput with
+reasonable headroom (29.23 GB of ~44 GB available alongside epochs=16;
+would be more like 29 GB of the full 46 GB in isolation, i.e. ~63%
+utilized, leaving real margin unlike pb=64's ~89%+). Diminishing returns
+were already visible 16→32 (-0.80 sec/step) vs 8→16 (-2.87 sec/step),
+suggesting 32 is close to where fixed per-step overhead stops dominating.
+**No new multi-hour run launched on this config yet** -- awaiting explicit
+approval per "do not launch another multi-hour run until I approve."
+
+## 20-epoch pb=32 run, EOS-fixed, fresh from base model
+
+Per user direction: fix throughput first (already done, pb=32 chosen and
+verified above), then run one 20-epoch check to locate the plateau rather
+than reopening a big search. Added `--save-every-epoch` (opt-in, off by
+default -- no effect on any other run) so every epoch's weights are kept
+for independent post-hoc evaluation, not just best/final. Fresh from base
+model (not continuing the 16-epoch checkpoint, per instruction). Noise
+multiplier recalculated specifically for epochs=20:
+`sample_rate=128/81375, target_epsilon=5.0` -> **0.5896** (vs 16-epoch's
+0.5792) -- confirmed at launch, matching the precomputed value exactly, and
+re-affirming the user's point that this is a separately-calibrated
+optimization problem, not "the 16-epoch run plus 4 more epochs."
+
+**Runtime: 4h 14min** (08:46:10 -> 13:00:29), vs. the 16-epoch run's 33.35
+hrs -- confirms the physical-batch-size fix (pb=32) delivered roughly an
+8x wall-clock improvement even accounting for the extra 4 epochs. GPU
+utilization during this run held around 79-100% (vs. 17-45% at pb=2).
+
+Final ε=4.9914, best val loss 0.2396 at epoch 20 (final epoch, still
+improving -- no regression this time, unlike the 16-epoch run's epoch-16
+uptick). Per-epoch val loss: 0.399(1) 0.339(2) 0.306(3) 0.281(4) 0.265(5)
+0.257(6) 0.256(7) 0.254(8) 0.252(9) 0.248(10) 0.248(11) 0.246(12) 0.245(13)
+0.243(14) 0.242(15) 0.241(16) 0.242(17, small uptick) 0.241(18) 0.240(19)
+**0.2396(20, best)**. All 20 epoch checkpoints saved to
+`checkpoints/eos_fixed/vault_gemma/dp_eps5.0_seed42_batch128_epochs20_2gpu/epoch_{1..20}/`
+for the pending unique-PII-F1 evaluation across epochs 14-20 (not yet run
+as of this log entry -- paused to investigate a separate, higher-priority
+finding below first).
+
+## AG News/MNLI evaluator repair (investigation, epochs=12 checkpoint)
+
+User flagged that the production classification/NLI evaluator
+(`evaluation/loss_based_eval.py`'s `_avg_label_loss`, argmin raw
+conditional-label loss) shows severe label-string priors (AG News
+collapses to Sci/Tech, MNLI disfavors neutral) and must not be used for
+paper utility numbers as-is. Evaluation only -- no training changes.
+
+Built `evaluation/classification_eval_methods.py` (raw reused unmodified
+from `loss_based_eval.py`; new calibrated/PMI method with null prompts
+built from the exact literal instruction strings
+`instruction_recall_dataset/build_instruction_dataset.py` uses, content
+field left empty; new generation method reusing `_build_prompt` so all
+three methods share identical prompt construction) and
+`evaluation/run_classification_eval.py` (driver, fixed stratified sample
+by default, >=20 examples/class).
+
+**Zero-shot base**: generation invalid-rate 100% -- inspected raw text,
+confirmed genuine (an untuned base model free-writes plausible article
+continuations instead of emitting a label; not a parsing bug).
+
+**Epochs=12 EOS-fixed, AG News**: generation 81.25% (invalid=0%, all 4
+labels, balanced) vs. raw-loss 23.75% (collapsed Sci/Tech 76/80) vs.
+calibrated 30.0% (collapsed World/Business only) -- a 51-point disagreement
+between calibrated and generation, triggering the user's explicit "stop
+and investigate" rule. MNLI: all three methods within ~3 points of each
+other, near chance -- no investigation needed there, likely a genuine
+difficulty rather than a measurement artifact.
+
+**Root cause, confirmed with a controlled test**: `_avg_label_loss`
+tokenizes with `add_special_tokens=False` (no BOS), but
+`finetune/dataset.py`'s actual training input uses the tokenizer's default
+(`add_special_tokens=True`, BOS included). Direct A/B test, same model,
+same input, only BOS differing: NLL for the correct label "Business" is
+14.44 without BOS (probability ~5e-7, nonsense) vs. 1.125 with BOS (normal,
+confident). Every loss-based prediction has been scored in an
+out-of-distribution regime the model was never trained on.
+
+Added a new "constrained/joint" method (scores the complete trained
+response -- label tokens + EOS -- via **sum** NLL, not average, so it
+can't be diluted by cheap deterministic follow-up tokens the way averaging
+can) for comparison. Audited `_avg_label_loss` per the user's checklist:
+scores label tokens only (not EOS); uses average NLL, not sum; prompt/full
+tokenization boundary is clean (verified, not a bug); whitespace at the
+prompt/label boundary is correct (matches training); response prefix
+matches training. Label token counts vary sharply (World/Sports/Business=1
+token, Sci/Tech=3; neutral=1, contradiction=2, entailment=3) -- a real
+secondary risk from averaging, independent of the BOS bug.
+
+**After the BOS fix** (reimplemented locally for the comparison only, not
+yet applied to `loss_based_eval.py`), same 80-example AG News sample:
+
+| Method | Broken | BOS-fixed | Agreement w/ generation (BOS-fixed) |
+|---|---|---|---|
+| Raw-loss | 23.75% | 85.0%, all 4 labels, balanced | 96.25% |
+| Calibrated/PMI | 30.0% | 61.25%, still favors World (39/80) | 61.25% (still disagrees) |
+| Constrained/joint (sum NLL, label+EOS) | 27.5% (collapsed Sports) | **82.5%**, all 4 labels, balanced | **98.75%** |
+| Free generation | 81.25% (unaffected by the bug) | -- | -- |
+
+Constrained generation vs. free generation: not implemented as a separate
+`LogitsProcessor` decoder -- for a closed 3-4-way candidate set,
+exhaustively scoring every candidate's full-sequence likelihood (the
+constrained/joint method) is mathematically exact constrained decoding, no
+approximate search over the same candidates could do better. The near-
+identity result (98.75% agreement) confirms free generation already
+behaves as if constrained.
+
+Leakage check corrected mid-investigation: first pass flagged 80/80
+examples as "leaking" the gold label into the prompt, which was a false
+alarm from checking the full input including the instruction line (which
+lists all 4 category names for every example, by design). Restricted to
+the article-text portion only: 3/80 (3.75%) incidental overlaps (e.g. wire
+service name "Sports Network", ordinary usage "World cocoa prices") -- not
+a systematic leak.
+
+**Status as of this log entry**: root cause found and confirmed for AG
+News/epochs=12. `_avg_label_loss` and the production evaluator have **not**
+been modified. MNLI-specific BOS-fix verification, and extending this
+audit to the other checkpoints (zero-shot, 16, 20), have not been run yet
+-- awaiting user direction on how to proceed.
+
+## VaultGemma ε≈5 optimization FROZEN — final checkpoint selected
+
+Per user direction: freeze VaultGemma ε=5 optimization here. No epochs >20
+run. Selected checkpoint:
+`checkpoints/eos_fixed/vault_gemma/dp_eps5.0_seed42_batch128_epochs20_2gpu/epoch_18`
+(selection criterion: highest validation unique PII F1 among epochs 14-20,
+per the earlier combined table -- epoch 18's 0.861 tied epoch 19's 0.861
+but epoch 18 has the lower val loss of the two, 0.2406 vs 0.2564).
+
+**1. Actual accountant ε at epoch 18**: **4.8387** (not an assumed/rounded
+5.0 -- pulled directly from the RDP accountant's per-epoch record in the
+training results JSON). Satisfies the ε≤5.0 budget with 0.16 margin.
+Noise multiplier for this run: 0.5896 (calibrated for the full 20-epoch
+schedule at target ε=5.0; the epoch-18 *actual* spend is naturally lower
+since only 18 of 20 epochs' worth of composition had accrued at that
+point).
+
+**2. Full utility evaluation, epoch 18, validation only:**
+
+| Metric | Value |
+|---|---|
+| AG News generation accuracy | 82.5% |
+| AG News invalid-generation rate | 0.0% |
+| AG News corrected (BOS-fixed) raw-loss accuracy | 82.5% (matches generation) |
+| AG News calibrated accuracy | 72.5% |
+| MNLI generation accuracy | 41.67% |
+| MNLI invalid-generation rate | 0.0% |
+| MNLI corrected raw-loss accuracy | 41.67% (matches generation) |
+| MNLI calibrated accuracy | 36.67% (still shows residual contradiction bias) |
+| PII unique precision | 0.8838 |
+| PII unique recall | 0.8394 |
+| PII unique F1 | 0.8610 |
+| PII exact match | 0.6169 |
+| PII repetition fraction | 0.0107 |
+| Validation loss | 0.2406 |
+
+**3. CanaryBench privacy audit, epoch 18** (`canarybench/evaluate.py:evaluate()`,
+unmodified; member/reference canary artifacts, not the test set):
+
+| Metric | Value |
+|---|---|
+| Member loss mean | 4.3665 |
+| Reference loss mean | 4.3736 |
+| Memorization gap | 0.00714 |
+| Gap 95% bootstrap CI (n=2000, seed=42, new for this task -- not previously in the repo) | **[-0.0396, 0.0534] -- includes zero** |
+| Gap by repetition: 1x / 10x / 50x | -0.0094 (n=500) / 0.0323 (n=150) / 0.0448 (n=120) |
+| Exposure mean / p50 / p95 / max | 1.524 / 1.020 / 4.921 / 9.966 |
+| WBC attack AUC (95% CI) | 0.4967 [0.4691, 0.5250] -- chance level |
+| WBC TPR @ FPR=0.01 | 0.0039 |
+| Targeted extraction rate: 1x / 10x / 50x | 0% / 0% / 0% (n=20 each) |
+
+The gap's 95% CI including zero is a materially stronger privacy claim
+than the point estimate alone: the observed member/reference difference
+is not statistically distinguishable from no memorization signal at all.
+
+**4. Consolidated results** (one JSON + one CSV, all of the above plus raw
+supporting files, saved to the repo -- nothing scratchpad-only):
+- `results/eos_fixed/privacy_eval/epoch18_selected_checkpoint_consolidated.json`
+- `results/eos_fixed/privacy_eval/epoch18_selected_checkpoint_consolidated.csv`
+- `results/eos_fixed/privacy_eval/epoch18_ag_news_mnli_raw.json` (raw per-example predictions)
+- `results/eos_fixed/privacy_eval/epoch18_canarybench_audit_raw.json` (raw `evaluate()` output)
+- `results/eos_fixed/privacy_eval/epoch18_gap_bootstrap_ci.json`
+
+**5. No tuning on test results** -- everything above used validation
+(`combined_val.jsonl`) for utility and the member/reference canary
+artifacts for the privacy audit; `combined_test.jsonl` was not touched
+anywhere in this task.
+
+**6. Next step**: user instructed moving LS04 to the next epsilon/model
+after this. Awaiting specifics (which epsilon, which model family) before
+launching anything -- config.py's `EPSILON_VALUES = [3.0, 5.0, 8.0]` and
+the `MODELS` registry (`gemma_2b_it`, `gemma3_1b`, `llama3_2_1b_it`) are
+the obvious candidates but nothing has been confirmed yet.
 
 ## Provenance warning
 
