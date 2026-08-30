@@ -41,12 +41,14 @@ def eval_one(tag, checkpoint_path):
         device="cuda",
         data_dir=DATA_DIR,
         results_dir=RESULTS_DIR,
+        save_all_samples=True,
     )
     elapsed = time.time() - start
     with open(out_path) as f:
         result = json.load(f)
     ev = result["evaluations"][0]
     metrics = ev["metrics"] or {}
+    pii = metrics.get("pii_detection", {})
     summary = {
         "tag": tag,
         "checkpoint": checkpoint_path,
@@ -54,11 +56,14 @@ def eval_one(tag, checkpoint_path):
         "avg_val_loss": ev["avg_loss"],
         "classification_accuracy": metrics.get("classification", {}).get("accuracy"),
         "nli_accuracy": metrics.get("nli", {}).get("accuracy"),
-        "pii_detection": metrics.get("pii_detection", {}),
+        "pii_detection": pii,
         "raw_result_path": str(out_path),
     }
     print(f"[{tag}] cls_acc={summary['classification_accuracy']} nli_acc={summary['nli_accuracy']} "
-          f"pii={summary['pii_detection']} ({elapsed:.0f}s)", flush=True)
+          f"pii_legacy_f1={pii.get('pii_legacy_f1')} pii_unique_f1={pii.get('pii_unique_f1')} "
+          f"dupe_frac={pii.get('repetition_frac_examples_with_dupes')} "
+          f"mean_dupes={pii.get('repetition_mean_dupe_count')} "
+          f"max_dupes={pii.get('repetition_max_dupe_count')} ({elapsed:.0f}s)", flush=True)
     return summary
 
 

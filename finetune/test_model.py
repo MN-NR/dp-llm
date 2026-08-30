@@ -68,42 +68,111 @@ def _relaxed_match(pred, gold, overlap_threshold=0.5):
     return overlap >= overlap_threshold
 
 
+def _match_pii(preds, golds, overlap_threshold):
+    """Greedily match predicted PII strings against gold strings (each gold
+    usable at most once). Matching rule itself (_relaxed_match) is untouched
+    -- this is just the shared bipartite-matching loop used by both the
+    legacy and unique scoring variants below."""
+    matched_gold = set()
+    matched_pred = set()
+    for pi, p in enumerate(preds):
+        for gi, g in enumerate(golds):
+            if gi in matched_gold:
+                continue
+            if _relaxed_match(p, g, overlap_threshold=overlap_threshold):
+                matched_gold.add(gi)
+                matched_pred.add(pi)
+                break
+    return matched_gold, matched_pred
+
+
+def _prf(tp, fp, fn):
+    precision = tp / (tp + fp) if tp + fp else 0.0
+    recall = tp / (tp + fn) if tp + fn else 0.0
+    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    return precision, recall, f1
+
+
 def relaxed_pii_scores(samples, overlap_threshold=0.5):
-    tp = fp = fn = exact = 0
+    """Two PII-detection scoring variants, both using the same matching rule
+    (_relaxed_match, same overlap_threshold):
+
+      relaxed_* / pii_legacy_*  -- original behavior, unchanged. Every parsed
+        predicted string counts as its own item, duplicates included. A
+        model that repeats one correct value N times under greedy decoding
+        (a decoding-repetition-loop artifact, not N distinct extra guesses)
+        is penalized N-1 times as false positives.
+
+      pii_unique_*  -- normalized predicted values are deduplicated (order
+        preserving) before matching. Isolates "did it identify the right
+        values" from "did it also loop while decoding." _split_pii_relaxed
+        already normalizes each item (via _norm_ws), so dedup is a plain
+        set-membership check, no extra normalization needed.
+
+    repetition_* fields describe the raw prediction lists directly, so the
+    legacy-vs-unique gap is legible rather than just two numbers that differ.
+    """
+    tp_legacy = fp_legacy = fn_legacy = exact_legacy = 0
+    tp_unique = fp_unique = fn_unique = exact_unique = 0
+    examples_with_dupes = 0
+    total_dupe_count = 0
+    max_dupe_count = 0
 
     for s in samples:
         golds = _split_pii_relaxed(s.get("target", ""))
         preds = _split_pii_relaxed(s.get("generated", ""))
 
-        matched_gold = set()
-        matched_pred = set()
-
-        for pi, p in enumerate(preds):
-            for gi, g in enumerate(golds):
-                if gi in matched_gold:
-                    continue
-                if _relaxed_match(p, g, overlap_threshold=overlap_threshold):
-                    matched_gold.add(gi)
-                    matched_pred.add(pi)
-                    break
-
-        tp += len(matched_gold)
-        fp += len(preds) - len(matched_pred)
-        fn += len(golds) - len(matched_gold)
-
+        matched_gold, matched_pred = _match_pii(preds, golds, overlap_threshold)
+        tp_legacy += len(matched_gold)
+        fp_legacy += len(preds) - len(matched_pred)
+        fn_legacy += len(golds) - len(matched_gold)
         if set(preds) == set(golds):
-            exact += 1
+            exact_legacy += 1
 
-    precision = tp / (tp + fp) if tp + fp else 0.0
-    recall = tp / (tp + fn) if tp + fn else 0.0
-    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+        seen = set()
+        unique_preds = []
+        for p in preds:
+            if p not in seen:
+                seen.add(p)
+                unique_preds.append(p)
+        n_dupes = len(preds) - len(unique_preds)
+        if n_dupes > 0:
+            examples_with_dupes += 1
+            total_dupe_count += n_dupes
+            max_dupe_count = max(max_dupe_count, n_dupes)
+
+        matched_gold_u, matched_pred_u = _match_pii(unique_preds, golds, overlap_threshold)
+        tp_unique += len(matched_gold_u)
+        fp_unique += len(unique_preds) - len(matched_pred_u)
+        fn_unique += len(golds) - len(matched_gold_u)
+        if set(unique_preds) == set(golds):
+            exact_unique += 1
+
+    p_l, r_l, f1_l = _prf(tp_legacy, fp_legacy, fn_legacy)
+    p_u, r_u, f1_u = _prf(tp_unique, fp_unique, fn_unique)
+    n = len(samples)
 
     return {
-        "relaxed_precision": round(precision, 4),
-        "relaxed_recall": round(recall, 4),
-        "relaxed_f1": round(f1, 4),
-        "relaxed_exact_match": round((exact / len(samples)) if samples else 0.0, 4),
-        "n_samples": len(samples),
+        # Original keys, byte-identical computation -- unchanged for any
+        # existing reader.
+        "relaxed_precision": round(p_l, 4),
+        "relaxed_recall": round(r_l, 4),
+        "relaxed_f1": round(f1_l, 4),
+        "relaxed_exact_match": round((exact_legacy / n) if n else 0.0, 4),
+        # Explicit legacy_* aliases (same values, same computation).
+        "pii_legacy_precision": round(p_l, 4),
+        "pii_legacy_recall": round(r_l, 4),
+        "pii_legacy_f1": round(f1_l, 4),
+        # Duplicate-predictions-collapsed variant.
+        "pii_unique_precision": round(p_u, 4),
+        "pii_unique_recall": round(r_u, 4),
+        "pii_unique_f1": round(f1_u, 4),
+        "pii_unique_exact_match": round((exact_unique / n) if n else 0.0, 4),
+        # Repetition diagnostics.
+        "repetition_frac_examples_with_dupes": round((examples_with_dupes / n) if n else 0.0, 4),
+        "repetition_mean_dupe_count": round((total_dupe_count / n) if n else 0.0, 4),
+        "repetition_max_dupe_count": max_dupe_count,
+        "n_samples": n,
     }
 
 
