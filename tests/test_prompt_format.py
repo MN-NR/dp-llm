@@ -2,11 +2,13 @@ import json
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from transformers import AutoTokenizer
 
 from canarybench.prompt_format import (
     RESPONSE_PREFIX,
+    build_generation_prompt,
     build_supervised_text,
     legacy_hardcoded_supervised_text,
     tokenizer_uses_chat_template,
@@ -118,6 +120,16 @@ class PromptAndTargetSpanTests(unittest.TestCase):
         legacy = legacy_hardcoded_supervised_text(SAMPLE_RECORD)
         self.assertEqual(canonical, legacy)
 
+    def test_vault_gemma_train_eval_generation_prompt_agrees(self):
+        """VaultGemma generation must use the exact training prompt prefix."""
+        tok = self.tokenizers["vault_gemma"]
+        if tok is None:
+            self.skipTest("vault_gemma tokenizer not available locally")
+        training_prompt, _ = build_supervised_text(tok, SAMPLE_RECORD)
+        evaluation_prompt = build_generation_prompt(tok, SAMPLE_RECORD["input"])
+        self.assertEqual(evaluation_prompt, training_prompt)
+        self.assertTrue(evaluation_prompt.endswith(RESPONSE_PREFIX))
+
     def test_chat_template_models_diverge_from_legacy_hardcoded(self):
         """For Gemma-it/Llama-Instruct, the legacy hardcoded "### Response:"
         template is NOT what the model was trained on -- this is the bug
@@ -133,6 +145,37 @@ class PromptAndTargetSpanTests(unittest.TestCase):
                 self.assertNotEqual(canonical_prompt, legacy_prompt)
                 self.assertNotIn(RESPONSE_PREFIX, canonical_prompt)
                 self.assertIn(RESPONSE_PREFIX, legacy_prompt)
+
+    def test_date_aware_chat_prompt_can_be_pinned(self):
+        tok = self.tokenizers["llama3_2_1b_it"]
+        if tok is None:
+            self.skipTest("llama3_2_1b_it tokenizer not available locally")
+        with patch.dict(os.environ, {"DP_LLM_CHAT_DATE": "31 Aug 2026"}):
+            training_prompt, _ = build_supervised_text(tok, SAMPLE_RECORD)
+            evaluation_prompt = build_generation_prompt(tok, SAMPLE_RECORD["input"])
+        self.assertEqual(training_prompt, evaluation_prompt)
+        self.assertIn("Today Date: 31 Aug 2026", evaluation_prompt)
+
+    def test_eos_pad_token_remains_supervised(self):
+        from finetune.dataset import MultiTaskDataset
+
+        tok = self.tokenizers["llama3_2_1b_it"]
+        if tok is None:
+            self.skipTest("llama3_2_1b_it tokenizer not available locally")
+        tok.pad_token = tok.eos_token
+        record = dict(SAMPLE_RECORD, group="C")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "records.jsonl")
+            with open(path, "w") as handle:
+                handle.write(json.dumps(record) + "\n")
+            with patch.dict(os.environ, {"DP_LLM_CHAT_DATE": "31 Aug 2026"}):
+                item = MultiTaskDataset(path, tok, max_length=256)[0]
+        supervised_eos = (
+            (item["input_ids"] == tok.eos_token_id)
+            & (item["attention_mask"] == 1)
+            & (item["labels"] != -100)
+        )
+        self.assertTrue(supervised_eos.any().item())
 
     def test_lm_task_records_have_no_prompt(self):
         lm_record = {"task": "lm", "input": "", "target": "raw language modeling text"}

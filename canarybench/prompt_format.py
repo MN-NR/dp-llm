@@ -22,9 +22,16 @@ It is kept here, clearly labeled, so historical logs/results produced with
 it can still be reproduced exactly on request.
 """
 
+import os
 from typing import Any, Dict, Tuple
 
 RESPONSE_PREFIX = "\n\n### Response:\n"
+
+
+def _chat_template_kwargs() -> Dict[str, str]:
+    """Optional reproducibility override for date-aware chat templates."""
+    date_string = os.environ.get("DP_LLM_CHAT_DATE")
+    return {"date_string": date_string} if date_string else {}
 
 
 def tokenizer_uses_chat_template(tokenizer: Any) -> bool:
@@ -32,14 +39,22 @@ def tokenizer_uses_chat_template(tokenizer: Any) -> bool:
 
 
 def build_generation_prompt(tokenizer: Any, prompt: str) -> str:
-    """Prompt-only string used to *generate* a completion (no target)."""
+    """Prompt-only string used to *generate* a completion (no target).
+
+    This must be identical to the prompt-only prefix returned by
+    :func:`build_supervised_text` for a non-LM record. In particular,
+    tokenizers without a chat template (VaultGemma) use RESPONSE_PREFIX;
+    returning the raw prompt here would make greedy evaluation use a
+    different format from training.
+    """
     if tokenizer_uses_chat_template(tokenizer):
         return tokenizer.apply_chat_template(
             [{"role": "user", "content": prompt}],
             tokenize=False,
             add_generation_prompt=True,
+            **_chat_template_kwargs(),
         )
-    return prompt
+    return f"{prompt}{RESPONSE_PREFIX}"
 
 
 def build_supervised_text(tokenizer: Any, record: Dict[str, Any]) -> Tuple[str, str]:
@@ -62,11 +77,13 @@ def build_supervised_text(tokenizer: Any, record: Dict[str, Any]) -> Tuple[str, 
             ],
             tokenize=False,
             add_generation_prompt=False,
+            **_chat_template_kwargs(),
         )
         prompt_only = tokenizer.apply_chat_template(
             [{"role": "user", "content": prompt}],
             tokenize=False,
             add_generation_prompt=True,
+            **_chat_template_kwargs(),
         )
         return prompt_only, full_text
     prompt_only = f"{prompt}{RESPONSE_PREFIX}"

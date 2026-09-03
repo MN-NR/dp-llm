@@ -642,6 +642,22 @@ def train_dp_ddp(
                 "secret_reference_losses": secret_reference_results,
             })
 
+            if cfg.save_epoch_checkpoints:
+                epoch_dir = os.path.join(output_dir, "epoch_checkpoints", f"epoch_{epoch + 1:02d}")
+                bare_model.save_pretrained(epoch_dir)
+                tokenizer.save_pretrained(epoch_dir)
+                with open(os.path.join(epoch_dir, "training_metadata.json"), "w") as f:
+                    json.dump({
+                        "epoch": epoch + 1,
+                        "optimizer_steps": global_step,
+                        "epsilon_actual": eps_spent,
+                        "epsilon_target": epsilon,
+                        "delta": cfg.delta,
+                        "noise_multiplier": optimizer.noise_multiplier,
+                        "accountant": "rdp",
+                    }, f, indent=2)
+                logger.info(f"  Epoch checkpoint saved → {epoch_dir}")
+
             # Save best model
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
@@ -685,6 +701,9 @@ def train_dp_ddp(
             "grad_accum":         cfg.grad_accum,
             "logical_batch_size": logical_batch_size,
             "dp_physical_batch_size": cfg.dp_physical_batch_size,
+            "sample_rate": logical_batch_size / len(train_ds),
+            "optimizer_steps": global_step,
+            "accountant": "rdp",
             "world_size":         dist.get_world_size(),
             "learning_rate":      cfg.learning_rate,
             "lora_r":             cfg.lora_r,

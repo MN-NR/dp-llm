@@ -276,6 +276,7 @@ def train_baseline(cfg: TrainingConfig, pilot: bool = False):
     logger.info(f"Train: {len(train_ds):,}  Val: {len(val_ds):,}")
 
     # ── Training args ─────────────────────────────────────────────────────────
+    checkpoint_strategy = "epoch" if cfg.save_epoch_checkpoints else "steps"
     training_args = TrainingArguments(
         output_dir                  = output_dir,
         num_train_epochs            = cfg.num_epochs,
@@ -284,16 +285,16 @@ def train_baseline(cfg: TrainingConfig, pilot: bool = False):
         gradient_accumulation_steps = cfg.grad_accum,
         learning_rate               = cfg.learning_rate,
         warmup_steps                = cfg.warmup_steps,
-        eval_strategy               = "steps",
+        eval_strategy               = checkpoint_strategy,
         eval_steps                  = cfg.eval_steps,
-        save_strategy               = "steps",
+        save_strategy               = checkpoint_strategy,
         save_steps                  = cfg.save_steps,
-        save_total_limit            = 2,
+        save_total_limit            = None if cfg.keep_all_checkpoints else 2,
         logging_steps               = cfg.logging_steps,
         fp16                        = (device.type == "cuda" and not torch.cuda.is_bf16_supported()),
         bf16                        = (device.type == "cuda" and torch.cuda.is_bf16_supported()),
         report_to                   = "none",
-        load_best_model_at_end      = True,
+        load_best_model_at_end      = not cfg.save_epoch_checkpoints,
         metric_for_best_model       = "eval_loss",
         greater_is_better           = False,
     )

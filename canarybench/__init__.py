@@ -9,3 +9,8 @@ generation. It wraps them:
     evaluate()         -> thin wrapper around metrics/privacy/* and metrics/utility/*
     report()           -> human-readable summary of an evaluate() result
 """
+
+# Public submodule: ``import canarybench; canarybench.tuning.search(...)``.
+from . import tuning
+
+__all__ = ["tuning"]

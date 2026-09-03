@@ -103,7 +103,11 @@ class MultiTaskDataset(Dataset):
             else:
                 labels[:prompt_len] = -100
 
-        labels[labels == self.tokenizer.pad_token_id] = -100
+        # Mask padding by position, not by token value. Some causal-LM
+        # tokenizers (notably Llama-3.2 here) use EOS/EOT as the pad token.
+        # Masking by token id would therefore erase genuine supervised EOS
+        # targets in addition to padding.
+        labels[attention_mask == 0] = -100
 
         # Sanity check
         if (labels != -100).sum().item() == 0:

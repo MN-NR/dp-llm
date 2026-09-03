@@ -40,6 +40,10 @@ class TrainingConfig:
     eval_steps:        int   = 500
     save_steps:        int   = 500
     logging_steps:     int   = 100
+    # Opt-in controls used by CanaryBench tuning. Defaults preserve all
+    # historical trainer behavior.
+    save_epoch_checkpoints: bool = False
+    keep_all_checkpoints: bool = False
 
     # ── DP ─────────────────────────────────────────────────────
     epsilon:           float = 5.0
