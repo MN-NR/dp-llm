@@ -174,6 +174,14 @@ def run_preflight(
                 )
                 bos_id = getattr(tokenizer, "bos_token_id", None)
                 bos_count = sum(token == bos_id for token in encoded_default) if bos_id is not None else 0
+                raw_bos_count = sum(token == bos_id for token in encoded_raw) if bos_id is not None else 0
+                tokenizer_added_bos = bool(
+                    bos_id is not None
+                    and encoded_default
+                    and encoded_default[0] == bos_id
+                    and (not encoded_raw or encoded_default != encoded_raw)
+                )
+                expected_bos_count = raw_bos_count + int(tokenizer_added_bos)
                 item = training_dataset[index]
                 supervised = item["labels"] != -100
                 supervised_terminators = [
@@ -187,6 +195,8 @@ def run_preflight(
                     "token_count": len(encoded_default),
                     "unk_fraction": unk_fraction,
                     "bos_count": bos_count,
+                    "raw_template_bos_count": raw_bos_count,
+                    "expected_bos_count": expected_bos_count,
                     "bos_added_by_tokenizer": encoded_default != encoded_raw,
                     "supervised_terminator_ids": supervised_terminators,
                     "label_parser_ok": bool(parsed),
@@ -196,8 +206,11 @@ def run_preflight(
                     errors.append(f"train/eval prompt mismatch for task {record.get('task')}")
                 if unk_fraction > 0.20:
                     errors.append(f"unexpected unk-heavy tokenization for task {record.get('task')}: {unk_fraction:.1%}")
-                if bos_count > 1:
-                    errors.append(f"duplicated BOS token for task {record.get('task')}")
+                if bos_count != expected_bos_count:
+                    errors.append(
+                        f"unexpected BOS behavior for task {record.get('task')}: "
+                        f"observed={bos_count}, expected={expected_bos_count}"
+                    )
                 if not supervised_terminators:
                     errors.append(f"no supervised EOS/EOT terminator for task {record.get('task')}")
                 if not row["label_parser_ok"]:
@@ -215,4 +228,3 @@ def run_preflight(
 def require_preflight(report: PreflightReport) -> None:
     """Explicit launch gate used by candidate runners and unit tests."""
     report.raise_if_failed()
-

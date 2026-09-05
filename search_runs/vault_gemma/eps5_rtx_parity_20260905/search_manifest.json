@@ -1,0 +1,119 @@
+{
+  "created_at": "2026-09-05T22:23:30.875817+00:00",
+  "dataset": {
+    "member_path": "/home/noora/dp-llm/dp-llm/instruction_recall_dataset/dataset/processed_v2/member_canaries.jsonl",
+    "reference_path": "/home/noora/dp-llm/dp-llm/instruction_recall_dataset/dataset/processed_v2/attack_eval.jsonl",
+    "registry_path": "/home/noora/dp-llm/dp-llm/instruction_recall_dataset/dataset/processed_v2/canary_registry.json",
+    "root": "/home/noora/dp-llm/dp-llm/instruction_recall_dataset/dataset/processed_v2",
+    "selection_data": "validation",
+    "test_used": false,
+    "train_path": "/home/noora/dp-llm/dp-llm/instruction_recall_dataset/dataset/processed_v2/combined_train.jsonl",
+    "validation_path": "/home/noora/dp-llm/dp-llm/instruction_recall_dataset/dataset/processed_v2/combined_val.jsonl",
+    "validation_sensitivity": "private",
+    "version": "processed_v2"
+  },
+  "environment": {
+    "git_commit": "0a3373453c513c023eaf9b13ae016fcd973e5c08",
+    "model_revision": "f9624dafc1760cb2f6039e86e12055d6559d7abb",
+    "packages": {
+      "accelerate": "1.13.0",
+      "numpy": "2.2.6",
+      "opacus": "1.5.4",
+      "peft": "0.18.0",
+      "torch": "2.11.0+cu128",
+      "transformers": "4.57.0.dev0"
+    },
+    "seed": 42,
+    "tokenizer_revision": "f9624dafc1760cb2f6039e86e12055d6559d7abb"
+  },
+  "lora": {
+    "alpha": 32,
+    "dropout": 0.0,
+    "r": 16,
+    "target_modules": [
+      "q_proj",
+      "v_proj",
+      "k_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ]
+  },
+  "model": "vault_gemma",
+  "privacy": {
+    "accountant": "rdp",
+    "delta": 1e-05,
+    "epsilon": 5.0,
+    "max_grad_norm": 1.0,
+    "mode": "dp"
+  },
+  "schema_version": 1,
+  "search": {
+    "candidates": [
+      {
+        "candidate_dir": "/home/noora/dp-llm/dp-llm/search_runs/vault_gemma/eps5_rtx_parity_20260905/candidates/lr_2e-05_ep_20_gb_128",
+        "checkpoint_root": "/home/noora/dp-llm/dp-llm/search_runs/vault_gemma/eps5_rtx_parity_20260905/candidates/lr_2e-05_ep_20_gb_128/checkpoints",
+        "command": [
+          "/home/noora/miniconda3/envs/dp_gpu/bin/python",
+          "-m",
+          "canarybench.tuning",
+          "run-candidate",
+          "--manifest",
+          "/home/noora/dp-llm/dp-llm/search_runs/vault_gemma/eps5_rtx_parity_20260905/search_manifest.json",
+          "--candidate-id",
+          "lr_2e-05_ep_20_gb_128"
+        ],
+        "created_at": "2026-09-05T22:23:30.875811+00:00",
+        "deferred": false,
+        "global_batch_size": 128,
+        "gradient_accumulation": 16,
+        "id": "lr_2e-05_ep_20_gb_128",
+        "learning_rate": 2e-05,
+        "max_epochs": 20,
+        "physical_batch_size": 2,
+        "preflight_path": "/home/noora/dp-llm/dp-llm/search_runs/vault_gemma/eps5_rtx_parity_20260905/candidates/lr_2e-05_ep_20_gb_128/preflight.json",
+        "status": "aborted_throughput_probe_microbatch_2",
+        "trainer_batch_size": 8,
+        "trainer_results_dir": "/home/noora/dp-llm/dp-llm/search_runs/vault_gemma/eps5_rtx_parity_20260905/candidates/lr_2e-05_ep_20_gb_128/trainer_results",
+        "validation": []
+      }
+    ],
+    "memorization_used_for_selection": false,
+    "minimal_policy_note": "Only the first candidate is active. Deferred candidates require explicit activation after reviewing validation utility and optimization diagnostics.",
+    "policy": "minimal",
+    "search_space": {
+      "epochs": [
+        20
+      ],
+      "global_batch_size": [
+        128
+      ],
+      "learning_rate": [
+        2e-05
+      ]
+    },
+    "selection_data": "validation",
+    "selection_metric": "multitask_utility",
+    "selection_split": "validation",
+    "test_used": false,
+    "tie_breaking": [
+      "highest_u_val",
+      "highest_pii_unique_f1",
+      "lower_invalid_rate",
+      "lower_repetition_fraction",
+      "earlier_checkpoint"
+    ],
+    "validation_sensitivity": "private"
+  },
+  "status": "prepared",
+  "trainer": {
+    "backend": "repo_train_dp",
+    "chat_date": null,
+    "model_revision": "f9624dafc1760cb2f6039e86e12055d6559d7abb",
+    "physical_batch_size": 2,
+    "python_executable": "/home/noora/miniconda3/envs/dp_gpu/bin/python",
+    "tokenizer_revision": "f9624dafc1760cb2f6039e86e12055d6559d7abb",
+    "world_size": 1
+  }
+}

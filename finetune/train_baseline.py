@@ -19,10 +19,12 @@ import json
 import argparse
 import logging
 import shutil
+import random
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from transformers import (
@@ -33,6 +35,7 @@ from transformers import (
     Trainer,
     TrainerCallback,
     DataCollatorForLanguageModeling,
+    set_seed,
 )
 from peft import LoraConfig, get_peft_model, TaskType
 
@@ -189,6 +192,17 @@ def _load_tokenizer(model_source: str, hf_token: str, source_kwargs: dict):
 
 def train_baseline(cfg: TrainingConfig, pilot: bool = False):
 
+    # Seed before model loading/LoRA construction so adapter initialization is
+    # reproducible, not merely the later Trainer data order.
+    random.seed(cfg.seed)
+    np.random.seed(cfg.seed)
+    torch.manual_seed(cfg.seed)
+    set_seed(cfg.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(cfg.seed)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+
     if pilot:
         cfg.num_epochs    = cfg.pilot_epochs
         cfg.eval_steps    = 50
@@ -291,6 +305,8 @@ def train_baseline(cfg: TrainingConfig, pilot: bool = False):
         save_steps                  = cfg.save_steps,
         save_total_limit            = None if cfg.keep_all_checkpoints else 2,
         logging_steps               = cfg.logging_steps,
+        seed                        = cfg.seed,
+        data_seed                   = cfg.seed,
         fp16                        = (device.type == "cuda" and not torch.cuda.is_bf16_supported()),
         bf16                        = (device.type == "cuda" and torch.cuda.is_bf16_supported()),
         report_to                   = "none",
@@ -394,6 +410,7 @@ def train_baseline(cfg: TrainingConfig, pilot: bool = False):
         "model_key":         cfg.model_key,
         "model_name":        cfg.model_name,
         "run_type":          "baseline",
+        "seed":              cfg.seed,
         "pilot":             pilot,
         "train_loss":        round(train_result.training_loss, 4),
         "train_runtime_sec": round(elapsed, 2),

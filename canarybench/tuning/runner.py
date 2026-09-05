@@ -33,6 +33,7 @@ def _candidate_config(manifest: Mapping[str, Any], candidate: Mapping[str, Any])
     cfg.output_base = candidate["checkpoint_root"]
     cfg.results_dir = candidate["trainer_results_dir"]
     cfg.learning_rate = float(candidate["learning_rate"])
+    cfg.seed = int(manifest["environment"]["seed"])
     cfg.num_epochs = int(candidate["max_epochs"])
     cfg.batch_size = int(candidate["trainer_batch_size"])
     cfg.grad_accum = int(candidate["gradient_accumulation"])
@@ -185,4 +186,3 @@ def run_repo_candidate(manifest_path: str, candidate_id: str) -> Optional[Dict[s
         distributed.barrier()
         distributed.destroy_process_group()
     return result
-

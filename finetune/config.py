@@ -34,6 +34,7 @@ class TrainingConfig:
     batch_size:        int   = 4
     grad_accum:        int   = 16
     learning_rate:     float = 1e-5
+    seed:              int   = 42
     num_epochs:        int   = 3
     warmup_steps:      int   = 100
     max_seq_length:    int   = 256

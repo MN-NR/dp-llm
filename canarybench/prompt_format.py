@@ -87,7 +87,11 @@ def build_supervised_text(tokenizer: Any, record: Dict[str, Any]) -> Tuple[str, 
         )
         return prompt_only, full_text
     prompt_only = f"{prompt}{RESPONSE_PREFIX}"
-    return prompt_only, f"{prompt_only}{target}"
+    full_text = f"{prompt_only}{target}"
+    eos_token = getattr(tokenizer, "eos_token", None)
+    if eos_token and not full_text.endswith(eos_token):
+        full_text += eos_token
+    return prompt_only, full_text
 
 
 def legacy_hardcoded_prompt(record: Dict[str, Any]) -> str:

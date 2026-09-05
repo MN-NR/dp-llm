@@ -1,0 +1,75 @@
+{
+  "created_at_local": "2026-09-05T18:34:00-04:00",
+  "purpose": "VaultGemma epsilon-5 RTX 5090 parity check before the missing epsilon-3 paper run",
+  "status": "stage1_passed_stage2_running",
+  "scientific_configuration": {
+    "model": "google/vaultgemma-1b",
+    "model_revision": "f9624dafc1760cb2f6039e86e12055d6559d7abb",
+    "tokenizer_revision": "f9624dafc1760cb2f6039e86e12055d6559d7abb",
+    "seed": 42,
+    "dataset": "instruction_recall_dataset/dataset/processed_v2",
+    "target_epsilon": 5.0,
+    "delta": 0.00001,
+    "accountant": "rdp",
+    "accounting_horizon_epochs": 20,
+    "global_logical_batch": 128,
+    "learning_rate": 0.00002,
+    "clip_norm": 1.0,
+    "lora": {"r": 16, "alpha": 32, "dropout": 0.0},
+    "prompt": "VaultGemma fallback ending in \\n\\n### Response:\\n",
+    "supervised_eos_token": "<eos>",
+    "supervised_eos_token_id": 1
+  },
+  "accounting": {
+    "raw_jsonl_records": 83000,
+    "filtered_train_records": 81375,
+    "poisson_draws_per_epoch": 636,
+    "accountant_sample_rate": 0.0015723270440251573,
+    "expected_poisson_batch": 127,
+    "noise_multiplier_calculated": 0.589599609375,
+    "noise_multiplier_observed": 0.5896,
+    "step_100_epsilon_calculated": 2.607054947371117,
+    "step_100_epsilon_observed": 2.607,
+    "step_200_epsilon_calculated": 2.723035366412512,
+    "step_200_epsilon_observed": 2.723
+  },
+  "optimization": {
+    "step_100_loss": 2.5227,
+    "step_200_loss": 1.0003,
+    "loss_finite": true,
+    "approx_logical_steps_per_minute": 30.0
+  },
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "physical_microbatch": 8,
+    "gpu_memory_total_mib": 32607,
+    "gpu_memory_reserved_gb_at_step_200": 9.36,
+    "observed_utilization_percent_range": [64, 83],
+    "microbatch_2_probe": {
+      "status": "aborted_before_step_100_for_low_utilization",
+      "observed_utilization_percent": 48,
+      "observed_memory_mib": 4582,
+      "scientific_accounting_changed": false,
+      "artifact_root": "../eps5_rtx_parity_20260905"
+    }
+  },
+  "checks": {
+    "preflight_passed": true,
+    "three_tokenizer_examples_checked": true,
+    "train_eval_prompt_agreement": true,
+    "eos_supervision_passed": true,
+    "label_parsing_passed": true,
+    "test_set_touched": false,
+    "preflight_artifact": "candidates/lr_2e-05_ep_20_gb_128/preflight.json"
+  },
+  "limitations": [
+    "LS04 was unreachable from this host because the ls04 hostname did not resolve; direct live-log comparison was unavailable.",
+    "The local historical VaultGemma epsilon-5 sweep used the old no-EOS fallback and independently calibrated 3/5/8-epoch horizons, so it is preserved as legacy context rather than treated as a parity comparator."
+  ],
+  "stage2": {
+    "status": "training_to_epoch_3_then_validation_only_evaluation",
+    "training_tmux": "vault_eps5_rtx_parity",
+    "guard_tmux": "vault_eps5_parity_guard",
+    "validation_output": "validation/validation_epochs_01_03.json"
+  }
+}

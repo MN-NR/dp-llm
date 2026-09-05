@@ -105,20 +105,21 @@ class PromptAndTargetSpanTests(unittest.TestCase):
                 print("full_text:  ", repr(full_text))
                 print("target span (decoded from prompt_len: tokens):", repr(decoded_target_span))
 
-    def test_vault_gemma_has_no_chat_template(self):
+    def test_vault_gemma_fallback_adds_supervised_eos(self):
         """VaultGemma is a base (non-instruction-tuned) model: it has no
-        chat_template, so canonical formatting falls back to the same
-        "### Response:" template as the legacy path. This means the
-        canary_eval.py prompt-formatting bugfix is a NO-OP for VaultGemma
-        specifically -- it only changes behavior for chat-template models
-        (Gemma-it, Llama-Instruct)."""
+        chat_template, so canonical formatting uses the ``### Response:``
+        prompt and appends the tokenizer EOS after the supervised target.
+        The legacy formatter remains available only for reproducing old
+        no-EOS artifacts."""
         tok = self.tokenizers["vault_gemma"]
         if tok is None:
             self.skipTest("vault_gemma tokenizer not available locally")
         self.assertFalse(tokenizer_uses_chat_template(tok))
-        canonical = build_supervised_text(tok, SAMPLE_RECORD)
-        legacy = legacy_hardcoded_supervised_text(SAMPLE_RECORD)
-        self.assertEqual(canonical, legacy)
+        canonical_prompt, canonical_full = build_supervised_text(tok, SAMPLE_RECORD)
+        legacy_prompt, legacy_full = legacy_hardcoded_supervised_text(SAMPLE_RECORD)
+        self.assertEqual(canonical_prompt, legacy_prompt)
+        self.assertEqual(canonical_full, legacy_full + tok.eos_token)
+        self.assertTrue(canonical_full.endswith(tok.eos_token))
 
     def test_vault_gemma_train_eval_generation_prompt_agrees(self):
         """VaultGemma generation must use the exact training prompt prefix."""

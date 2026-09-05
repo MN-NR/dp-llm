@@ -1,0 +1,116 @@
+{
+  "checks": {
+    "canarybench_validation": {
+      "issues": [],
+      "passed": true,
+      "stats": {
+        "canary_isolation": "passed (0 overlap)",
+        "frequency_mismatches": 0,
+        "frequency_tier_counts": {
+          "1": 500,
+          "10": 150,
+          "50": 120
+        },
+        "member_field_type_counts": {
+          "EMAIL": 308,
+          "PHONE": 462
+        },
+        "member_reference_secret_value_overlap_count": 0,
+        "member_target_char_len": {
+          "max": 44,
+          "mean": 15.281818181818181,
+          "min": 9
+        },
+        "num_canaries_at_truncation_risk": 0,
+        "num_members": 770,
+        "num_references": 1000,
+        "reference_field_type_counts": {
+          "EMAIL": 422,
+          "PHONE": 578
+        },
+        "reference_target_char_len": {
+          "max": 30,
+          "mean": 15.446,
+          "min": 9
+        },
+        "split_validation": {
+          "exact_overlap_count": 0,
+          "has_exact_overlap": false,
+          "member_count": 770,
+          "member_has_exposure_metadata": false,
+          "member_has_field_type_metadata": true,
+          "member_unique_count": 770,
+          "reference_count": 1000,
+          "reference_unique_count": 1000
+        },
+        "token_length": {
+          "max": 118,
+          "mean": 55.36045197740113
+        }
+      }
+    },
+    "dataset_version": "processed_v2",
+    "lora_target_modules": {
+      "missing": [],
+      "requested": [
+        "q_proj",
+        "v_proj",
+        "k_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ]
+    },
+    "model_revision": "f9624dafc1760cb2f6039e86e12055d6559d7abb",
+    "sample_tokenizations": [
+      {
+        "bos_added_by_tokenizer": true,
+        "bos_count": 1,
+        "expected_bos_count": 1,
+        "label_parser_ok": true,
+        "prompt_match": true,
+        "raw_template_bos_count": 0,
+        "supervised_terminator_ids": [
+          1
+        ],
+        "task": "classification",
+        "token_count": 76,
+        "unk_fraction": 0.0
+      },
+      {
+        "bos_added_by_tokenizer": true,
+        "bos_count": 1,
+        "expected_bos_count": 1,
+        "label_parser_ok": true,
+        "prompt_match": true,
+        "raw_template_bos_count": 0,
+        "supervised_terminator_ids": [
+          1
+        ],
+        "task": "nli",
+        "token_count": 53,
+        "unk_fraction": 0.0
+      },
+      {
+        "bos_added_by_tokenizer": true,
+        "bos_count": 1,
+        "expected_bos_count": 1,
+        "label_parser_ok": true,
+        "prompt_match": true,
+        "raw_template_bos_count": 0,
+        "supervised_terminator_ids": [
+          1
+        ],
+        "task": "pii_detection",
+        "token_count": 92,
+        "unk_fraction": 0.0
+      }
+    ],
+    "test_accessed": false,
+    "three_sample_tokenizations_checked": true,
+    "tokenizer_revision": "f9624dafc1760cb2f6039e86e12055d6559d7abb"
+  },
+  "errors": [],
+  "passed": true
+}
