@@ -202,7 +202,20 @@ def train_dp(
     epsilon: float,
     pilot: bool = False,
     seed: int = 42,
+    noise_multiplier: "float | None" = None,
 ):
+    """noise_multiplier: leave None for the normal DP path (Opacus
+    make_private_with_epsilon() calibrates noise to hit `epsilon` over
+    cfg.num_epochs -- unchanged from before this parameter existed). Pass an
+    explicit value (e.g. 0.0) to skip epsilon calibration entirely and call
+    Opacus make_private() directly with that noise_multiplier and
+    cfg.max_grad_norm -- e.g. noise_multiplier=0.0 gives a "clipping-only"
+    mechanistic ablation (per-sample gradient clipping applied, no DP noise
+    added) to isolate clipping's contribution from noise's. Opacus's own
+    get_epsilon() already returns float("inf") (not an exception) when
+    noise_multiplier=0, so no special-casing is needed anywhere else in this
+    function -- every existing epsilon log/report line already handles it.
+    """
 
     # if pilot:
     #     cfg.num_epochs    = cfg.pilot_epochs
@@ -212,8 +225,11 @@ def train_dp(
         cfg.pilot_train_size   = None   # use FULL dataset for DP accounting
         cfg.pilot_val_size     = 250    # keep val small
         cfg.num_epochs         = 1      # just 1 epoch
-    
-    run_tag    = f"dp_eps{epsilon}_seed{seed}"
+
+    if noise_multiplier is not None:
+        run_tag = f"clip_only_C{cfg.max_grad_norm}_seed{seed}"
+    else:
+        run_tag = f"dp_eps{epsilon}_seed{seed}"
     if pilot:
         run_tag += "_pilot"
     output_dir = os.path.join(cfg.output_base, cfg.model_key, run_tag)
@@ -374,8 +390,12 @@ def train_dp(
     )
 
     # ── Privacy engine ────────────────────────────────────────────────────────
-    logger.info(f"Attaching PrivacyEngine  ε={epsilon}  δ={cfg.delta}  "
-                f"clip={cfg.max_grad_norm}")
+    if noise_multiplier is not None:
+        logger.info(f"Attaching PrivacyEngine  CLIPPING-ONLY  noise_multiplier={noise_multiplier}  "
+                    f"clip={cfg.max_grad_norm}")
+    else:
+        logger.info(f"Attaching PrivacyEngine  ε={epsilon}  δ={cfg.delta}  "
+                    f"clip={cfg.max_grad_norm}")
     # Force use of analytical accountant to avoid PRV bug
     import opacus.accountants.rdp as rdp_module
     rdp_module.PRV_AVAILABLE = False
@@ -384,16 +404,29 @@ def train_dp(
 
     print(f"max_grad_norm being used: {cfg.max_grad_norm}")
 
-    model, optimizer, train_loader = privacy_engine.make_private_with_epsilon(
-        module         = model,
-        optimizer      = optimizer,
-        data_loader    = train_loader,
-        target_epsilon = epsilon,
-        target_delta   = cfg.delta,
-        epochs         = cfg.num_epochs,
-        max_grad_norm  = cfg.max_grad_norm,
-        noise_generator = noise_generator,
-    )
+    if noise_multiplier is not None:
+        # Clipping-only mechanistic ablation: per-sample gradient clipping
+        # to cfg.max_grad_norm, explicit noise_multiplier (0.0 = no DP noise
+        # added at all), no epsilon calibration/target.
+        model, optimizer, train_loader = privacy_engine.make_private(
+            module          = model,
+            optimizer       = optimizer,
+            data_loader     = train_loader,
+            noise_multiplier = noise_multiplier,
+            max_grad_norm   = cfg.max_grad_norm,
+            noise_generator = noise_generator,
+        )
+    else:
+        model, optimizer, train_loader = privacy_engine.make_private_with_epsilon(
+            module         = model,
+            optimizer      = optimizer,
+            data_loader    = train_loader,
+            target_epsilon = epsilon,
+            target_delta   = cfg.delta,
+            epochs         = cfg.num_epochs,
+            max_grad_norm  = cfg.max_grad_norm,
+            noise_generator = noise_generator,
+        )
 
     # Add noise multiplier and sample rate prints
     print(f"Noise multiplier: {optimizer.noise_multiplier:.4f}")
@@ -650,6 +683,7 @@ def train_dp(
         "run_type":           "dp_lora",
         "pilot":              pilot,
         "seed":               seed,
+        "clipping_only":      noise_multiplier is not None,
         "target_epsilon":     epsilon,
         "final_epsilon":      round(final_epsilon, 4),
         "delta":              cfg.delta,

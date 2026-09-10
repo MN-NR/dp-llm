@@ -148,6 +148,7 @@ def evaluate(
     run_extraction: bool = True,
     n_extraction_targets: int = 20,
     mask_prompt: bool = False,
+    frequency_tiers: Sequence[int] = DEFAULT_FREQUENCY_TIERS,
 ) -> EvaluationResult:
     """artifacts: an object with .member_path / .reference_path (e.g.
     canarybench.inject.InjectionArtifacts, or any object with those two
@@ -175,6 +176,12 @@ def evaluate(
     Use MODE_A_HISTORICAL / MODE_B_TARGET_ONLY's "mask_prompt" values
     explicitly at call sites rather than relying on this default when you
     need the mode recorded unambiguously in saved results.
+
+    frequency_tiers: which exposure values to break "frequency_breakdown"
+    and "targeted_extraction" out by. Defaults to the original three-tier
+    schedule (1, 10, 50); pass the actual tiers present in the canary
+    registry for other schedules (e.g. (1, 2, 5, 10, 20, 50) for the
+    six-tier dose-response ladder).
     """
     mode_label = MODE_A_HISTORICAL["label"] if mask_prompt is False else MODE_B_TARGET_ONLY["label"]
     try:
@@ -194,7 +201,9 @@ def evaluate(
         device=device,
         mask_prompt=mask_prompt,
     )
-    frequency_breakdown = memorization_by_frequency(exposure["member_losses"], exposure["reference_loss_mean"])
+    frequency_breakdown = memorization_by_frequency(
+        exposure["member_losses"], exposure["reference_loss_mean"], frequency_tiers=frequency_tiers
+    )
     pii_type_breakdown = memorization_by_pii_type(exposure["member_losses"], exposure["reference_loss_mean"])
 
     wbc = None
@@ -220,6 +229,7 @@ def evaluate(
             exposure["member_losses"],
             device,
             n_targets=n_extraction_targets,
+            frequency_tiers=frequency_tiers,
         )
 
     return EvaluationResult(

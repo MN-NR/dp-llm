@@ -163,10 +163,17 @@ def exposure_by_repetition(
     }
 
 
-def memorization_by_frequency(canary_results: Sequence[Dict[str, Any]], reference_mean: float) -> Dict[str, Dict[str, Any]]:
-    """Break down loss gap by 1x, 10x, 50x exposure tiers (paper table helper)."""
+def memorization_by_frequency(
+    canary_results: Sequence[Dict[str, Any]],
+    reference_mean: float,
+    frequency_tiers: Sequence[int] = (1, 10, 50),
+) -> Dict[str, Dict[str, Any]]:
+    """Break down loss gap by exposure tiers (paper table helper). Default
+    tiers (1, 10, 50) match the original three-tier canary schedule; pass
+    frequency_tiers explicitly for other schedules (e.g. the six-tier
+    dose-response ladder) -- the grouping logic itself is unchanged."""
     tiers: Dict[str, Dict[str, Any]] = {}
-    for freq in (1, 10, 50):
+    for freq in frequency_tiers:
         losses = [float(r["loss"]) for r in canary_results if r.get("exposure") == freq and r.get("loss") is not None]
         if not losses:
             continue
