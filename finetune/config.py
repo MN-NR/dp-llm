@@ -31,10 +31,16 @@ class TrainingConfig:
     )
 
     # ── Training ───────────────────────────────────────────────
-    batch_size:        int   = 4
-    grad_accum:        int   = 16
-    learning_rate:     float = 1e-5
-    num_epochs:        int   = 3
+    # STANDARD PROTOCOL (all paper runs): global batch = batch_size*grad_accum
+    # = 128, clip norm = 1.0, LR = 2e-5, max horizon = 20 epochs (save every
+    # epoch, then checkpoint selection by validation utility). LoRA + the
+    # dataset/prompt/EOS pipeline are held fixed. `dp_physical_batch_size`
+    # is NOT part of the protocol -- it's a per-hardware memory knob, always
+    # set via --physical-batch-size (pb=16 on A100-40GB, pb=64 on H100-94GB).
+    batch_size:        int   = 16
+    grad_accum:        int   = 8       # 16 * 8 = 128 global logical batch
+    learning_rate:     float = 2e-5
+    num_epochs:        int   = 20
     warmup_steps:      int   = 100
     max_seq_length:    int   = 256
     eval_steps:        int   = 500
@@ -44,8 +50,8 @@ class TrainingConfig:
     # ── DP ─────────────────────────────────────────────────────
     epsilon:           float = 5.0
     delta:             float = 1e-5
-    max_grad_norm:     float = 5.0
-    dp_physical_batch_size: int = 4
+    max_grad_norm:     float = 1.0     # clip norm (standard protocol)
+    dp_physical_batch_size: int = 16   # per-hardware; override via --physical-batch-size
 
     # ── Pilot mode ─────────────────────────────────────────────
     pilot_mode:        bool  = False
@@ -104,14 +110,14 @@ def require_dataset_paths(cfg: "TrainingConfig") -> None:
         )
 
 
-# ── Model registry — updated for 2x L40S (46GB each) ──────────────────────────
+# ── Model registry ───────────────────────────────────────────────────────────
 #
-# Key principle: keep EFFECTIVE batch size = 64 across ALL runs
-# This isolates DP noise effect from batch size differences
-#
-# Baseline (no DP):  batch_size × grad_accum × num_gpus = 64
-# DP training:       batch_size × grad_accum = 64 (Opacus handles single-GPU)
-#                    (Opacus doesn't support native multi-GPU, use FSDP or single)
+# Standard protocol (see TrainingConfig above): global batch = 128
+# (batch_size * grad_accum), clip norm = 1.0, LR = 2e-5, 20-epoch horizon.
+# These are inherited from the base TrainingConfig defaults now, so per-model
+# entries only override model_name/key, target_modules, dataset paths, and
+# max_seq_length where it genuinely differs. `dp_physical_batch_size` is a
+# per-hardware knob -- always pass --physical-batch-size on the CLI.
 
 MODELS = {
     "gemma_2b_it": TrainingConfig(
@@ -119,14 +125,6 @@ MODELS = {
         model_key      = "gemma_2b_it",
         target_modules = ["q_proj", "v_proj", "k_proj", "o_proj",
                           "gate_proj", "up_proj", "down_proj"],
-        # Baseline: 8 × 4 × 2 GPUs = 64 effective
-        # DP:       4 × 16 = 64 effective (single GPU, Opacus requirement)
-        batch_size     = 4,
-        grad_accum     = 16,
-        dp_physical_batch_size = 4,
-        learning_rate  = 1e-5,
-        max_grad_norm  = 1.0,
-        num_epochs     = 3,
     ),
 
     "vault_gemma": TrainingConfig(
@@ -134,17 +132,11 @@ MODELS = {
         model_key      = "vault_gemma",
         target_modules = ["q_proj", "v_proj", "k_proj", "o_proj",
                           "gate_proj", "up_proj", "down_proj"],
-        # 1B model — fits easily on L40S
-        # Baseline: 16 × 2 × 2 GPUs = 64 effective
-        # DP:       2 × 32 = 64 logical, split into physical batches of 2
-        # Reduced batch/sequence for lower GPU memory usage
-        batch_size     = 2,
-        grad_accum     = 32,
-        dp_physical_batch_size = 2,
+        # NOTE: 128, not the standard 256 -- this is the frozen VaultGemma
+        # pipeline's own value (kept for continuity with the LS04 seed-42
+        # runs). It filters ~1.6k more long training records than the 256
+        # the Llama runs use, so the effective train set differs slightly.
         max_seq_length = 128,
-        learning_rate  = 1e-5,
-        max_grad_norm  = 1.0,
-        num_epochs     = 3,
     ),
 
     "gemma3_1b": TrainingConfig(
@@ -152,13 +144,6 @@ MODELS = {
         model_key      = "gemma3_1b",
         target_modules = ["q_proj", "v_proj", "k_proj", "o_proj",
                           "gate_proj", "up_proj", "down_proj"],
-        # Same size as VaultGemma — same batch sizes
-        batch_size     = 8,
-        grad_accum     = 8,
-        dp_physical_batch_size = 2,
-        learning_rate  = 1e-5,
-        max_grad_norm  = 1.0,
-        num_epochs     = 3,
     ),
 
     "llama3_2_1b_it": TrainingConfig(
@@ -166,13 +151,6 @@ MODELS = {
         model_key      = "llama3_2_1b_it",
         target_modules = ["q_proj", "v_proj", "k_proj", "o_proj",
                           "gate_proj", "up_proj", "down_proj"],
-        # Same scale as the other 1B instruction-tuned models.
-        batch_size     = 8,
-        grad_accum     = 8,
-        dp_physical_batch_size = 8,
-        learning_rate  = 1e-5,
-        max_grad_norm  = 1.0,
-        num_epochs     = 3,
         train_path     = repo_path("instruction_recall_dataset", "dataset", "processed", "combined_train.jsonl"),
         val_path       = repo_path("instruction_recall_dataset", "dataset", "processed", "combined_val.jsonl"),
         canary_path    = repo_path("instruction_recall_dataset", "dataset", "processed", "member_canaries.jsonl"),

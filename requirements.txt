@@ -1,0 +1,26 @@
+# dp-llm dependencies.
+#
+# The four pinned packages match the frozen corrected pipeline recorded in
+# EXPERIMENT_LOG.md (conda env `dp-llm` on LS04). torch there was
+# 2.5.1+cu121; on OSC Cardinal (H100, CUDA-13-capable driver) we install the
+# same torch minor version from the cu124 wheel index instead -- see
+# bin/osc_setup_env.sh, which is the reproducible installer. A full transitive
+# lock of the resulting environment is in slurm/requirements.lock.txt.
+#
+#   torch==2.5.1        (installed from https://download.pytorch.org/whl/cu124)
+transformers==4.57.6
+opacus==1.5.4
+peft==0.18.1
+datasets
+accelerate
+numpy
+pandas
+matplotlib
+scipy
+scikit-learn
+rouge-score
+tqdm
+pytest
+hf_transfer
+sentencepiece
+protobuf

@@ -826,3 +826,689 @@ of this log entry:
 - `checkpoints/eos_fixed/vault_gemma/dp_eps5.0_seed42_batch128_epochs12_2gpu/` — EOS-fixed, DP, batch=128, epochs=12
 - `checkpoints/eos_fixed/vault_gemma/dp_eps5.0_seed42_batch128_epochs16_2gpu/` — EOS-fixed, DP, batch=128, epochs=16 (in progress)
 - **epochs=8 EOS-fixed DP checkpoint no longer exists** (overwritten by the epochs=12 run before the naming fix — its full metrics are preserved above, its weights are not)
+
+---
+
+## OSC Cardinal port + Bug 3: EOS supervision re-broken for Llama by the dataset padding mask
+
+**Date**: 2026-09-03. **Context**: next configuration after the LS04
+VaultGemma freeze — `llama3_2_1b_it`, ε=5.0, on OSC Cardinal (2× H100 94 GB,
+Slurm account `pmiu0248`). Environment rebuilt from scratch (no
+`requirements.txt` existed): `.venv` via `uv`, Python 3.11,
+`torch==2.5.1+cu124` (LS04 was `2.5.1+cu121`; cu124 chosen for the
+CUDA-13 driver, wheel bundles its own runtime + NCCL), `transformers==4.57.6`,
+`opacus==1.5.4`, `peft==0.18.1`. Dataset rebuilt deterministically
+(`build_instruction_dataset.py --seed 42`) into
+`instruction_recall_dataset/dataset/processed/`. Slurm scaffolding added
+under `slurm/` (`env.sh`, `build_dataset.slurm`, `verify_llama_tokenizer.py`,
+`train_test.slurm`, `bench_physical_batch.slurm`, `train_paper.slurm`) plus
+`bin/osc_setup_env.sh`. Note: the `cardinal-debug` QOS caps jobs at 1
+GPU/node, so all 2-GPU jobs use the `gpu` partition.
+
+**Bug** (found by the pre-run smoke check `slurm/verify_llama_tokenizer.py`,
+before any training): `finetune/dataset.py`'s `MultiTaskDataset.__getitem__`
+ended with
+
+    labels[labels == self.tokenizer.pad_token_id] = -100
+
+Llama-3.2-Instruct has **no dedicated pad token**, so `train_dp*.py` does
+`tokenizer.pad_token = tokenizer.eos_token` → `pad_token_id == eos_token_id
+== 128009 (<|eot_id|>)`. That masking line then set the label of **every**
+`<|eot_id|>` to −100, including the real end-of-turn token that terminates
+the target. Confirmed on real records: `build_supervised_text` produced
+`full_text` correctly ending in `<|eot_id|>` (`raw_ends_eos=True`), but the
+dataset item had the trailing EOS masked (`last_supervised=False`,
+`sup_eos=0`) for every record. Net effect: identical to Bug 2 — the DP model
+is never trained to stop — but re-introduced one layer below
+`build_supervised_text`, and invisible to VaultGemma/Gemma because those
+tokenizers have a distinct `<pad>` that never appears in target text.
+
+**Fix** (`finetune/dataset.py`): mask padding by **position**, not token id:
+
+    labels[attention_mask == 0] = -100
+
+For a tokenizer with a distinct pad token (Gemma family) this is byte-for-
+byte identical to the old behaviour — `<pad>` only ever occurs at
+`attention_mask == 0` positions. For pad == eos (Llama) it keeps the
+target's terminating EOS in the loss. Post-fix: all real records show
+`last_is_eos=True, last_supervised=True, sup_eos=1`; supervised-token count
+per record rises by exactly 1 (the newly-unmasked EOS).
+
+**Also**: `tests/test_prompt_format.py::test_lm_task_records_have_no_prompt`
+was stale (expected `full_text == target`, predating Bug 2's EOS append) —
+updated to expect `target + eos_token`. New regression test
+`test_multitask_dataset_keeps_trailing_eos_supervised` asserts the training
+path keeps a supervised EOS for every model, including the pad == eos case.
+The long-standing `test_multitask_dataset_uses_canonical_formatter` failure
+(its `_StubTokenizer` has no `eos_token`) is unrelated and still open.
+
+**Comparability**: the fix is a no-op for the VaultGemma/Gemma pipeline, so
+the frozen LS04 ε=5 VaultGemma numbers are unaffected. The Llama ε=5 run is
+the first under the corrected dataset path.
+
+---
+
+## Ascend A100 track: NCCL P2P hang, and env variance vs Cardinal
+
+**Date**: 2026-09-04. **Context**: Cardinal's `gpu` (H100) partition queue
+estimated a multi-day wait for the 20-epoch Llama ε=5 run (159 pending vs
+46 running jobs, several multi-day reservations ahead in priority). Checked
+OSC's other clusters: Pitzer has only V100s; **Ascend has A100s** and, at
+the time, `nextgen` partition had ~95 idle A100 GPUs against only ~13
+GPU-requesting pending jobs -- a 2-GPU test job went PENDING->RUNNING in
+~15-20s there, vs the Cardinal job's ~5-day estimate. Cancelled the
+Cardinal job (14170701, still PENDING, no GPU-time lost) in favor of
+Ascend. Added `slurm/train_test_a100.slurm` / `train_paper_a100.slurm`
+(same config, different cluster/partition).
+
+**Environment differences discovered on Ascend, none present on Cardinal:**
+
+1. `debug-nextgen` partition's `ascend-debug` QOS caps 1 GPU/node
+   (`QOSMaxGRESPerNode`) -- same trap as Cardinal's `debug`. Used `nextgen`
+   instead (`ascend-nextgen-partition` QOS: <=3 GPU/job).
+2. `srun: fatal: cpus-per-task set by two different environment variables
+   SLURM_CPUS_PER_TASK=33 != SLURM_TRES_PER_TASK=cpu=32` -- Ascend's Slurm
+   (25.05.4) derives a conflicting value from `#SBATCH --cpus-per-task=32`
+   alone on these nodes. Fixed by passing `--cpus-per-task=32` explicitly
+   to the `srun` invocation itself.
+3. A100s here are **A100-PCIE-40GB**, not 80GB (Slurm's gres doesn't expose
+   per-GPU memory; confirmed via `nvidia-smi`/`torch.cuda.get_device_properties`
+   in `slurm/diag_a100_io.py`). H100's pb=32 already peaked at 38GB --
+   dropped to pb=16 for real headroom (confirmed 20.9GB peak, ~19GB free).
+
+**Real bug: DPDDP hung 10min then NCCL-watchdog-killed itself, on two
+different Ascend nodes (a0200, a0176).** Root-caused with three capped,
+cheap diagnostics (`slurm/diag_a100_io.py`, `diag_a100_concurrent.py`,
+`diag_a100_nccl.py`) rather than repeatedly eating the full 10-minute NCCL
+timeout:
+  - Raw GPFS scratch read of the cached model.safetensors: 4.48 GB/s, fine.
+  - Single-process `from_pretrained` + `.to(cuda)`: ~14s total, fine.
+  - Two CONCURRENT single-GPU `from_pretrained` calls (plain subprocesses,
+    no NCCL): both completed in ~25-28s, fine.
+  - Bare `dist.init_process_group("nccl")` + `dist.barrier()` between the
+    node's 2 A100s: **hangs**. NCCL negotiates the collective, logs
+    `Init COMPLETE`, picks `via P2P/CUMEM` (then, with
+    `NCCL_CUMEM_ENABLE=0`, `via P2P/IPC`) -- either way the actual transfer
+    never completes; watchdog fires at the configured timeout every time.
+    Direct GPU peer-to-peer between this A100 pair does not actually work
+    on this hardware/driver, despite NCCL's topology detection reporting it
+    as available (classic IOMMU/ACS-blocked-peer-access symptom).
+
+**Fix**: `export NCCL_P2P_DISABLE=1` before `torchrun`. Forces NCCL onto
+`SHM/direct/direct` (staged through host memory) instead of any P2P path --
+barrier + all_reduce then complete in <1s. Purely a transport choice, no
+effect on DP-SGD math (same principle as the physical-batch-size knob: it
+changes how gradients move between GPUs, not what gets computed). Set only
+in the two `*_a100.slurm` scripts, not in `slurm/env.sh` -- Cardinal's H100
+P2P works fine and disabling it there would just be a needless slowdown.
+
+Full A100 smoke test (tokenizer/EOS verify + 50 real DPDDP steps) then
+passed clean: `nonfinite=0`, noise multiplier 0.5214 and ε trajectory
+identical to the Cardinal/H100 run (same seed) -- confirms the pipeline is
+numerically consistent across hardware once the transport issue is worked
+around. Throughput: 1.69 s/opt-step at pb=16 (~2x H100's pb=32 rate --
+smaller physical batch + SHM transport instead of P2P + A100 vs H100 raw
+throughput). Revised `train_paper_a100.slurm` time budget to 16h
+accordingly (was 12h, sized off the H100 rate).
+
+---
+
+## Llama ε∈{3,5,8} runs + post-training eval; evaluator-consistency fix
+
+**Date**: 2026-09-05. All three DP-LoRA runs (llama3_2_1b_it, 20 epochs,
+seed 42, global batch 128, LR 2e-5, pb=16, 2x A100 Ascend, ~6.4h each):
+
+| target ε | final ε (20-epoch) | noise mult | best val loss |
+|----------|--------------------|-----------:|--------------:|
+| 3.0      | 2.9956             | 0.6818     | 0.1998        |
+| 5.0      | 4.9946             | 0.5881     | 0.1948        |
+| 8.0      | 7.9984             | 0.5191     | 0.1908        |
+
+**Checkpoint selection** (`slurm/select_checkpoint.py`, validation utility
+ONLY, no memorization metric): AG News + MNLI greedy-generation accuracy +
+invalid-rate via `evaluation.classification_eval_methods.generation_prediction`
+(the repaired strict evaluator), PII unique-F1 / exact-match / repetition
+via `evaluation.unique_pii_f1`, 300 records/task subsample, seed 42.
+Composite = mean(agnews_acc, mnli_acc, pii_unique_f1) - 0.5*mean(invalids)
+- 0.5*pii_repetition. Selected: **ε3 -> epoch 20, ε5 -> epoch 16,
+ε8 -> epoch 18**. Utility rises then plateaus over epochs.
+
+**ACTUAL ε of the selected checkpoint** (not the 20-epoch final budget --
+DP composition is per-step, so an earlier-epoch checkpoint carries a
+smaller accountant ε). Parsed from each epoch's "Epoch N Summary" in
+train.log:
+
+| target ε | selected epoch | actual ε at selected checkpoint |
+|----------|---------------:|--------------------------------:|
+| 3        | 20            | 2.996                           |
+| 5        | 16            | 4.689                           |
+| 8        | 18            | 7.737                           |
+
+Report both. Main figures may label ε_target = 3/5/8 as long as the caption
+says actual accountant values are tabulated separately (appendix).
+
+**Bug 4 (evaluator mismatch, fixed): privacy_audit.py's utility
+re-confirmation disagreed with checkpoint selection (AG News ~0.84 vs
+~0.86).** Root cause: the audit's `include_group_a=True` routed through
+`metrics.utility.task.evaluate_group_a`, a DIFFERENT evaluator from
+selection's:
+  - selection: `classification_eval_methods.generation_prediction` --
+    strict first-line exact-match vs the 4 AG labels else "invalid";
+    300 randomly-sampled classification records; `max_new_tokens=8`.
+  - `evaluate_group_a`: fuzzy `canonicalize_label` (exact -> startswith ->
+    token-in -> raw fallback); first **500 group-A records in file order**
+    -> only **264 are classification** (rest NLI); `max_new_tokens=50`;
+    extra `extract_first_response` post-processing.
+  The prompt builder differs too (`_build_prompt` vs
+  `build_generation_prompt`) but is EQUIVALENT for chat-template models
+  like Llama-3.2-Instruct (both `apply_chat_template(add_generation_prompt
+  =True)`), so training-consistency was never in question -- this was
+  purely a harness-choice difference.
+**Fix**: `slurm/privacy_audit.py` now sets `include_group_a=False` and
+recomputes utility by calling `select_checkpoint.eval_one_checkpoint`
+directly on FULL val (1000 records/task) -- the same code path as
+selection. The two now agree by construction, up to subsample-vs-full-val
+sampling error. `slurm/reaudit_a100.slurm` re-ran the audit for all three
+selected checkpoints under the fix; the eps-tagged
+`results/instruction_recall/privacy_audit_eps{3,5,8}_epoch_N.json` are
+authoritative (the older untagged `privacy_audit_epoch_16.json` is stale).
+
+**Privacy audit headline** (all three ε): WBC membership-inference AUC
+≈ 0.50 with 95% CI straddling 0.5; targeted greedy extraction rate = 0.0
+(avg ROUGE-1 0.0003); loss gap ~0.09-0.10 nats, 95% CI lower bound barely
+> 0, rising slightly with ε (0.092 -> 0.096 -> 0.100 -- expected direction,
+near noise floor); 1x/10x/50x exposure tiers low (~1.5-1.8) and increasing
+with injection count. No measurable memorization at any ε in this sweep.
+
+
+## VaultGemma-1B DP-LoRA sweep, seed 43 (ε ∈ {3, 5, 8}) — 2026-09-06
+
+Second-model sweep to pair with the Llama-3.2-1B-Instruct seed-42 runs.
+Same frozen pipeline: `instruction_recall_dataset/dataset/processed/`
+(seed-42 build), EOS-supervised, canonical prompt formatter, corrected
+evaluators, global batch 128 (`--batch-size 16 --grad-accum 8`),
+`max_grad_norm=1.0`, LoRA r16/α32 on the 7 proj modules, LR 2e-5,
+20-epoch horizon, `--save-every-epoch`, checkpoint selection by U_val only.
+Noise multiplier recomputed per ε by Opacus: **0.6836 / 0.5896 / 0.5203**
+for ε = 3 / 5 / 8.
+
+Differences vs the Llama runs (both intrinsic to VaultGemma, not choices):
+  - VaultGemma is a **base** model (no chat_template) → canonical formatter
+    falls back to the `### Response:` template; still EOS-supervised.
+  - `max_seq_length = 128` (the frozen VaultGemma pipeline value; Llama
+    uses 256). Filters ~1.6k more long training records, so the effective
+    train set is slightly smaller.
+
+Hardware: Ascend 2× A100-PCIE-40GB, `NCCL_P2P_DISABLE=1`, pb=16, ~7.8 h
+wall each (train + Phase 1 selection over 20 ckpts + Phase 2 audit, one
+combined job). Jobs 7168080 / 7168081 / 7168082, all COMPLETED.
+
+### Selected checkpoints and actual ε
+
+| ε_target | 20-epoch ε | selected epoch | actual ε @ selected epoch |
+|---------:|-----------:|---------------:|--------------------------:|
+| 3        | 2.9968     | 17             | 2.8678                    |
+| 5        | 4.9914     | 20             | 4.9914                    |
+| 8        | 7.9944     | 17             | 7.6026                    |
+
+ε=5's composite score was still rising at epoch 20 (0.702 → 0.704), so the
+horizon is binding for that config — its selected checkpoint carries the
+full 20-epoch budget. ε=3 and ε=8 plateaued and selected epoch 17.
+
+### Utility of selected checkpoint (full val, 1000 records/task; same
+evaluator as selection — `classification_eval_methods.generation_prediction`
++ `summarize`, `unique_pii_f1` for PII)
+
+| ε_target | AG News acc | MNLI acc | PII uniq-F1 | PII exact-match | PII repetition | perplexity |
+|---------:|------------:|---------:|------------:|----------------:|---------------:|-----------:|
+| 3        | 0.821       | 0.377    | 0.850       | 0.594           | 0.013          | 1.276      |
+| 5        | 0.822       | 0.382    | 0.863       | 0.620           | 0.013          | 1.271      |
+| 8        | 0.838       | 0.402    | 0.868       | 0.633           | 0.012          | 1.267      |
+
+AG News (~0.82–0.84) is within ~2 pts of the Llama runs. **MNLI is much
+lower (0.38–0.40 vs Llama's ~0.59)** — expected: VaultGemma is not
+instruction-tuned and is weak at 3-way NLI under greedy generation.
+Invalid-output rate ≤ 0.1% on both classification tasks. Utility rises
+monotonically with ε, as expected.
+
+Selection-subsample vs full-val AG News: 300-record selection subsample
+reads ~2–3 pts higher than full val (e.g. ε=3 epoch 17: 0.853 vs 0.821) —
+**same evaluator on both sides** (post Bug-4 fix), so this is pure
+sample-size variance, not an evaluator mismatch. Documented here so it is
+not "rediscovered" at write-up.
+
+### Privacy audit of selected checkpoint
+
+| ε_target | member loss | ref loss | gap (ref−member) | gap 95% CI        | WBC AUC | WBC AUC 95% CI    | extraction rate | exposure mean | 1×/10×/50×        |
+|---------:|------------:|---------:|-----------------:|-------------------|--------:|------------------|----------------:|--------------:|-------------------|
+| 3        | 2.7118     | 2.7786   | 0.0668           | [−0.011, 0.146]   | 0.5081  | [0.482, 0.536]   | 0.0             | 1.616         | 1.60 / 1.35 / 2.00 |
+| 5        | 2.6754     | 2.7479   | 0.0725           | [−0.006, 0.153]   | 0.5076  | [0.481, 0.536]   | 0.0             | 1.647         | 1.62 / 1.39 / 2.09 |
+| 8        | 2.6527     | 2.7273   | 0.0746           | [−0.004, 0.156]   | 0.5075  | [0.482, 0.536]   | 0.0             | 1.657         | 1.61 / 1.39 / 2.17 |
+
+**Headline: no measurable memorization at any ε.** WBC membership-inference
+AUC ≈ 0.508 with 95% CI straddling 0.5 (loss-baseline AUC ≈ 0.51, random
+0.5); targeted greedy extraction rate = 0.0 / avg ROUGE-1 = 0.0 over 770
+attempts at every ε; loss gap ~0.067–0.075 nats with 95% CI lower bound
+below 0 in all three. Gap and exposure both drift up very slightly with ε
+(0.067 → 0.073 → 0.075; exposure 1.616 → 1.647 → 1.657) — expected
+direction, magnitude at the noise floor. 50× injection tier shows mild
+amplification (~2.0–2.2) over the 1× tier (~1.6); 10× is not consistently
+above 1×. Same qualitative picture as the Llama seed-42 sweep.
+
+Result files: `results/instruction_recall/checkpoint_selection_vaultgemma_eps{3,5,8}_seed43.json`,
+`results/instruction_recall/privacy_audit_vaultgemma_eps{3,5,8}_seed43_epoch_{17,20,17}.json`.
+
+
+## Main-matrix completion + seed-robustness batch — 2026-09-06
+
+Seven independent OSC/Ascend jobs to fill in the main model×ε matrix and
+add ε=5 seed robustness. Dose-response is out of scope here (RTX track).
+All use the frozen corrected pipeline; only model / ε / seed vary.
+
+PRIORITY 1 (complete main matrix)
+  1. Gemma-3-1B  DP ε=3  seed 42
+  2. Gemma-3-1B  DP ε=8  seed 42
+  3. VaultGemma  NON-DP (ε=inf)  seed 42   — privacy-utility reference point
+PRIORITY 2 (ε=5 seed robustness)
+  4. VaultGemma  DP ε=5  seed 42
+  5. VaultGemma  DP ε=5  seed 44
+  6. Gemma-3-1B  DP ε=5  seed 43
+  7. Gemma-3-1B  DP ε=5  seed 44
+
+Not re-run (already complete): Gemma-3 seed-42 ε=5, VaultGemma seed-43
+ε={3,5,8}, Llama seed-42 ε={3,5,8}.
+
+### Frozen selection rule change (backward-compatible)
+
+`slurm/select_checkpoint.py` `composite_score` was the paper spec's
+**U_val = (AG News acc + MNLI acc + PII unique-F1) / 3** exactly — the
+old `- 0.5·mean(invalid) - 0.5·repetition` penalty terms were dropped
+from the *selection score* (still computed and stored per epoch for the
+report). Re-derived the argmax from the stored JSONs of all six completed
+runs (Llama ε3/5/8, VaultGemma seed-43 ε3/5/8): **every selected epoch is
+unchanged** (20/16/18 and 17/20/17), because the penalties were ≪ the
+utility spread. The whole matrix is now selected by one rule. The row key
+`composite` was renamed `u_val`.
+
+### train_baseline.py: per-epoch checkpoints for the non-DP run
+
+Added `--save-every-epoch` (a `SaveEveryEpochCallback` writing
+`epoch_N/` adapters, mirroring `train_dp_ddp.py`'s layout), `--seed`, and
+`--lora-dropout`. With `--save-every-epoch` the HF Trainer's own
+`load_best_model_at_end` (best-by-eval_loss) and step-based rotating
+checkpoints are disabled — the non-DP baseline is then selected by the
+**same U_val sweep** as the DP runs, not by eval_loss. The non-DP job
+passes `--lora-dropout 0.0` so its LoRA config matches the DP path (which
+forces dropout 0 for Opacus). Baseline ckpt root:
+`checkpoints/instruction_recall/vault_gemma/baseline_seed42_epochs20/`.
+
+### Preflight caught an over-strict EOS check (NOT a pipeline bug)
+
+New generic combined script
+`slurm/train_and_eval_a100_generic.slurm` (parametrised via
+`--export=ALL,MODEL=,EPS=,SEED=,TAG=`) runs
+`slurm/verify_eos_supervision.py --model-key $MODEL` as a hard preflight
+gate before training. On first submission the four Gemma-3 jobs **failed
+that gate in ~1 min each (no GPU time spent)** with
+"last real token id 107 != eos 1".
+
+Root cause was the **check**, not `build_supervised_text`. For chat models
+the canonical formatter deliberately relies on the chat template's own
+turn terminator (`add_generation_prompt=False`) and appends
+`tok.eos_token` only on the `### Response:` fallback path. Llama-3-Instruct
+ends turns with `<|eot_id|>`, which *is* its `eos_token`, so the old
+`last == tok.eos_token_id` check happened to pass. Gemma-2/3-it end turns
+with `<end_of_turn>` (id 106/107) — a distinct token that
+`generation_config.eos_token_id` lists as a stop id and that the model is
+supervised to emit — so generation still stops correctly, but the token
+!= `tok.eos_token` (`<eos>`, id 1). The completed Gemma-3 seed-42 ε=5 run
+used this same formatter and is unaffected.
+
+**Fix** (`slurm/verify_eos_supervision.py`): accept the union of
+`tok.eos_token_id`, every id in `GenerationConfig.eos_token_id`, and (chat
+models) the assistant-turn terminator derived empirically from
+`apply_chat_template`; ignore a trailing pure-whitespace token when
+locating the terminator. Re-verified: VaultGemma (`<eos>` id 1) and Llama
+(`<|eot_id|>` id 128009) still pass unchanged.
+
+### HF cache download race
+
+The four Gemma-3 jobs starting together against a cold shared
+`$HF_HOME` corrupted `tokenizer_config.json` for one of them
+(JSONDecodeError) and left `.incomplete` blobs. Added
+`slurm/warm_hf_cache.slurm` (one small job: `snapshot_download` +
+load-check of config/generation_config/tokenizer). Cleared the partial
+`models--google--gemma-3-1b-it` cache; the four Gemma-3 jobs were
+resubmitted with `--dependency=afterok:<warm-job>` so they read a
+complete cache.
+
+### Job IDs (Ascend `nextgen`, 2×A100-PCIE-40GB for DP, 1×A100 for non-DP)
+
+| # | run | job id | status at submit |
+|--:|-----|-------:|------------------|
+| 1 | gemma3 ε3 seed42       | 7175015 | pending (dep on 7175014) |
+| 2 | gemma3 ε8 seed42       | 7175016 | pending (dep) |
+| 3 | vaultgemma NON-DP s42  | 7174997 | running |
+| 4 | vaultgemma ε5 seed42   | 7174998 | running |
+| 5 | vaultgemma ε5 seed44   | 7174999 | running |
+| 6 | gemma3 ε5 seed43       | 7175017 | pending (dep) |
+| 7 | gemma3 ε5 seed44       | 7175018 | pending (dep) |
+|   | warm-hf-cache (gemma-3)| 7175014 | pending |
+
+(7174995/96, 7175000/01 = the first Gemma-3 submission, failed at the
+preflight gate before the fix; superseded by 7175015-18.)
+
+Each job: train (20 epochs, save every epoch) → checkpoint selection
+(U_val ONLY) → full CanaryBench audit (actual ε, AG, MNLI, PII unique
+P/R/F1 + exact match, gap + 95% CI, WBC AUC + CI, exposure,
+extraction-by-frequency). Test data untouched. `privacy_audit.py` now also
+emits `pii_unique_precision`/`recall` and
+`targeted_greedy_extraction_by_frequency` (1x/10x/50x); the latter needed
+one additive line in `metrics/privacy/extraction.py` to carry each
+canary's injection count into the per-canary details (no computed number
+changes).
+
+### RESULTS — all 7 COMPLETED (2026-09-07)
+
+Gemma-3 in-job EOS preflight passed under the fixed check (accepted stop
+ids `[1, 106]`; `<end_of_turn>` id 106 is the empirical chat terminator).
+VaultGemma runs ~7.8–9.3 h, Gemma-3 runs ~12.7 h each.
+
+Selected checkpoint (U_val) and actual ε:
+
+| run | sel epoch | 20-epoch ε | actual ε @ sel |
+|---|--:|--:|--:|
+| Gemma-3 ε=3 s42 | 20 | 2.996 | 2.9956 |
+| Gemma-3 ε=8 s42 | 19 | 7.994 | 7.8676 |
+| Gemma-3 ε=5 s43 | 18 | 4.995 | 4.8416 |
+| Gemma-3 ε=5 s44 | 13 | 4.994 | 4.4378 |
+| VaultGemma ε=5 s42 | 16 | 4.991 | 4.6860 |
+| VaultGemma ε=5 s44 | 15 | 4.991 | 4.6033 |
+| VaultGemma NON-DP s42 | 20 | inf | inf |
+
+(Gemma-3 s44 U_val plateaus flat from ep13; ep13 is the marginal peak,
+0.8361 vs 0.834–0.836 for ep14–20.)
+
+Utility of selected checkpoint (full val, 1000/task, selection evaluator):
+
+| run | AG News | MNLI | PII P | PII R | PII F1 | PII EM | ppl |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| Gemma-3 ε=3 s42 | 0.857 | 0.720 | 0.919 | 0.885 | 0.902 | 0.680 | 1.194 |
+| Gemma-3 ε=8 s42 | 0.862 | 0.727 | 0.935 | 0.905 | 0.920 | 0.727 | 1.179 |
+| Gemma-3 ε=5 s43 | 0.859 | 0.723 | 0.922 | 0.901 | 0.911 | 0.707 | 1.192 |
+| Gemma-3 ε=5 s44 | 0.860 | 0.723 | 0.919 | 0.887 | 0.903 | 0.682 | 1.191 |
+| VaultGemma ε=5 s42 | 0.845 | 0.354 | 0.882 | 0.827 | 0.854 | 0.603 | 1.271 |
+| VaultGemma ε=5 s44 | 0.831 | 0.366 | 0.890 | 0.832 | 0.860 | 0.617 | 1.267 |
+| **VaultGemma NON-DP s42** | **0.907** | **0.599** | **0.978** | **0.970** | **0.974** | **0.923** | **1.097** |
+
+Privacy audit:
+
+| run | gap (ref−mem) | gap 95% CI | WBC AUC | WBC 95% CI | extraction (1x/10x/50x) | exposure mean |
+|---|--:|---|--:|---|---|--:|
+| Gemma-3 ε=3 s42 | 0.068 | [−0.009, .] | 0.490 | [0.467, 0.516] | 0 / 0 / 0 | 1.63 |
+| Gemma-3 ε=8 s42 | 0.064 | [−0.011, .] | 0.488 | [0.465, 0.514] | 0 / 0 / 0 | 1.61 |
+| Gemma-3 ε=5 s43 | 0.071 | [−0.005, .] | 0.492 | [0.469, 0.517] | 0 / 0 / 0 | 1.63 |
+| Gemma-3 ε=5 s44 | 0.071 | [−0.004, .] | 0.486 | [0.463, 0.510] | 0 / 0 / 0 | 1.64 |
+| VaultGemma ε=5 s42 | 0.074 | [−0.010, .] | 0.495 | [0.468, 0.522] | 0 / 0 / 0 | 1.62 |
+| VaultGemma ε=5 s44 | 0.065 | [−0.014, .] | 0.504 | [0.475, 0.533] | 0 / 0 / 0 | 1.61 |
+| **VaultGemma NON-DP s42** | **3.779** | **[3.68, 3.87]** | **0.986** | **[0.982, 0.992]** | **0.034 / 0.960 / 0.975** | **9.06** |
+
+**Headline.** Every DP run (Gemma-3 ε∈{3,5,8}, VaultGemma ε=5, both seeds):
+WBC AUC ≈ 0.49 with CI straddling 0.5, loss-gap CI includes 0, targeted
+extraction exactly 0 at every repetition tier — no measurable
+memorization. The **non-DP VaultGemma baseline** is the textbook contrast:
+higher utility on every metric, but WBC AUC **0.986**, loss gap **3.78
+nats** (CI far from 0), and verbatim canary extraction **96% at 10×, 97.5%
+at 50×** injections. Same qualitative result as the earlier LS04 non-DP
+vs DP comparison, now on the full frozen OSC pipeline with U_val selection.
+
+**Seed robustness at ε=5.** Gemma-3 seeds 43/44: utility within ≤0.02 on
+every metric (AG .859/.860, MNLI .723/.723, PII F1 .911/.903), privacy
+indistinguishable. VaultGemma seeds 42/44 (+ seed-43 from the prior
+batch): AG .845/.831/.822, MNLI .354/.366/.382, PII F1 .854/.860/.863 —
+tight. Selection lands ep13–18; actual ε at selection 4.44–4.84.
+
+**Gemma-3 vs VaultGemma.** Gemma-3-1B-it (instruction-tuned) far stronger
+on MNLI (~0.72 vs ~0.36) and a bit stronger on AG/PII; both memorize
+nothing under DP. Gemma-3 utility rises only marginally ε=3→8 (AG
+.857→.862, PII F1 .902→.920), i.e. ε=3 is already near the DP utility
+ceiling for this task.
+
+Result files: `results/instruction_recall/checkpoint_selection_<tag>.json`
+and `privacy_audit_<tag>_epoch_<N>.json` for tags `gemma3_eps{3,8}_seed42`,
+`gemma3_eps5_seed{43,44}`, `vaultgemma_eps5_seed{42,44}`,
+`vaultgemma_baseline_nodp_seed42` (epochs 20/19/18/13/16/15/20).
+
+
+## Full 3-seed matrix — remaining 23 jobs — submitted 2026-09-07
+
+Target: every (model × privacy-level × seed) cell for models
+{VaultGemma, Gemma-3-1B, Llama-3.2-1B-Instruct}, levels {non-DP, ε=3,
+ε=5, ε=8}, seeds {42, 43, 44} = 36 cells. 13 were already done (the
+sections above + LS04's Gemma-3 s42 ε5); these 23 fill the rest.
+
+Same frozen pipeline as every prior run: global batch 128, clip 1.0,
+LoRA r16/α32 on 7 proj modules (DP forces dropout 0; non-DP passes
+`--lora-dropout 0.0` to match), LR 2e-5, EOS/prompt canonical pipeline,
+seed-42 processed dataset, 20-epoch horizon `--save-every-epoch`,
+checkpoint selection by **U_val = (AG + MNLI + PII uF1)/3** only, full
+CanaryBench audit after. Noise multiplier recalibrated per ε. seq len:
+256 (Gemma-3, Llama) / 128 (VaultGemma). All EOS preflights passed
+(`<|eot_id|>` / `<eos>` / `<end_of_turn>`); caches pre-warmed so no
+download race. All 23 went PENDING→RUNNING immediately on Ascend.
+
+New: `slurm/train_and_eval_a100_baseline_generic.slurm` (parametrised
+non-DP combined job, `--export=ALL,MODEL=,SEED=,TAG=`, 1×A100) —
+generalises the vault_gemma-only baseline script to any model/seed.
+
+**NOTE — Gemma-3 ε=5 seed 42 (job 7182223)** re-runs the cell LS04
+already did off-cluster, deliberately: this puts all 12 Gemma-3 cells on
+one identical OSC frozen pipeline with U_val selection. Cancel 7182223 if
+the LS04 result is meant to stand instead.
+
+Job IDs (Ascend `nextgen`; DP = 2×A100, non-DP = 1×A100):
+
+| model | cell | job id |
+|---|---|--:|
+| VaultGemma | non-DP s43 | 7182212 |
+| VaultGemma | non-DP s44 | 7182213 |
+| VaultGemma | ε=3 s42 | 7182214 |
+| VaultGemma | ε=3 s44 | 7182215 |
+| VaultGemma | ε=8 s42 | 7182216 |
+| VaultGemma | ε=8 s44 | 7182217 |
+| Gemma-3 | non-DP s42 | 7182218 |
+| Gemma-3 | non-DP s43 | 7182219 |
+| Gemma-3 | non-DP s44 | 7182220 |
+| Gemma-3 | ε=3 s43 | 7182221 |
+| Gemma-3 | ε=3 s44 | 7182222 |
+| Gemma-3 | ε=5 s42 | 7182223 |
+| Gemma-3 | ε=8 s43 | 7182224 |
+| Gemma-3 | ε=8 s44 | 7182225 |
+| Llama | non-DP s42 | 7182226 |
+| Llama | non-DP s43 | 7182227 |
+| Llama | non-DP s44 | 7182228 |
+| Llama | ε=3 s43 | 7182229 |
+| Llama | ε=3 s44 | 7182230 |
+| Llama | ε=5 s43 | 7182231 |
+| Llama | ε=5 s44 | 7182232 |
+| Llama | ε=8 s43 | 7182233 |
+| Llama | ε=8 s44 | 7182234 |
+
+After these land, the only cells NOT from the OSC frozen pipeline are
+Llama/VaultGemma/Gemma-3 seed-42 DP cells already reported above and the
+LS04 Gemma-3 s42 ε5 (superseded by 7182223).
+
+### RESULTS — 20/23 done, 3 recovered (2026-09-08)
+
+20 of 23 COMPLETED with full audit. The **3 Gemma-3 non-DP jobs
+(7182218/19/20) hit TIMEOUT at exactly 18:00:18** — training (~14.6 h at
+4.04 s/it) and U_val selection both finished (all 20 epoch_N/ saved,
+selected epochs 20/8/18), only Phase-2 audit was killed. Recovered via
+`slurm/audit_only_a100.slurm` (new: runs privacy_audit.py only on
+already-selected checkpoints; `--export SPECS="MK:SUBDIR:EPOCH:TAG ..."`),
+job 7196849. The 18 h `#SBATCH` wall on
+`train_and_eval_a100_baseline_generic.slurm` cannot be raised on a running
+job (Ascend allows lowering only); at submission nextgen accepts ≥48 h, so
+future big/slow jobs pass `sbatch --time=...`.
+
+**All DP runs — no memorization** (every model × ε{3,5,8} × seed): WBC AUC
+0.487–0.506, gap 0.06–0.11 with CI including 0, targeted extraction 0.0 at
+1×/10×/50×. **All non-DP baselines memorize** (WBC 0.89–0.99, gap 2.0–3.7
+nats, 87–97 % verbatim extraction at 10×/50×).
+
+| model | ε=3 (AG/MNLI/PIIf1) | ε=5 | ε=8 | non-DP |
+|---|---|---|---|---|
+| VaultGemma | .83/.36/.85 | (.82/.37/.86 s43 prior; .84/.35/.86 s42/44) | .84/.37/.86 | **.91/.60/.97**, ppl 1.10 |
+| Gemma-3 | .86/.72/.90 | .86/.73/.91 | .86/.73/.92 | sel .92/.82/.98 (audit via 7196849) |
+| Llama | .86/.58/.93 | .86/.60/.93 | .86/.60/.94 | **unstable** .73–.87 / .46–.80 / .55–.66, **ppl 10–15** |
+
+Selection epochs: DP runs land 15–20; **non-DP runs peak early** — Llama
+non-DP at ep 6/7/7, Gemma-3 non-DP at ep 20/8/18, i.e. without DP noise as
+a regularizer the model over-fits the small val set within a few epochs.
+
+**Llama non-DP instability**: across seeds 42/43/44 the selected non-DP
+checkpoint has perplexity 10–15 (vs ~1.24 for Llama DP), PII unique-F1
+0.55–0.66 (BELOW its own DP runs' 0.93), and MNLI swinging 0.46→0.80.
+It memorizes canaries (extraction ~0.9 at 10×) yet generalises worse on
+held-out PII. Under the frozen LR 2e-5 / 20-epoch protocol these are the
+numbers; flagged as noisy.
+
+## Gemma-2 pilot + Llama non-DP LR sensitivity — submitted 2026-09-08
+
+Per user's next-steps list:
+
+1. **Gemma-2-2B seed-42 pilot matrix** — `gemma_2b_it`
+   (`google/gemma-2-2b-it`, ~2.6 B, seq 256, 7 proj modules, r16/α32,
+   clip 1.0). Same frozen pipeline, global batch 128, LR 2e-5, 20 epochs,
+   U_val selection, full audit. DP jobs use **physical batch 4** (2.6 B
+   model + Opacus per-sample grads won't fit pb 16 on A100-40 GB) and
+   `--time=44:00:00` (est. 25–40 h — the pilot also measures whether
+   Gemma-2 DP is tractable here). All 4 depend on a cache-warm job.
+   - 7197015 warm `google/gemma-2-2b-it`
+   - 7197017 non-DP s42   (dep 7197015)
+   - 7197018 ε=3 s42  pb4 (dep 7197015)
+   - 7197019 ε=5 s42  pb4 (dep 7197015)
+   - 7197020 ε=8 s42  pb4 (dep 7197015)
+   If all 4 are healthy → add Gemma-2 seeds 43/44 for the same 4 settings
+   (full 12-run Gemma-2 matrix). NOT yet submitted — gated on pilot health.
+
+2. **Llama non-DP LR=1e-5 sensitivity, seed 42** — job **7197016**. Same
+   as the standard Llama non-DP baseline but LR 1e-5, isolated checkpoint
+   dir `baseline_seed42_epochs20_lr1e-5`, tag
+   `llama_baseline_nodp_seed42_lr1e-5`. If utility/perplexity improve
+   substantially, the non-DP baseline was under-optimised → rerun the
+   non-DP Llama seeds at the better LR. If not, keep current results and
+   document the instability.
+
+New plumbing: `train_baseline.py` gained `--run-label`;
+`train_and_eval_a100_generic.slurm` and `..._baseline_generic.slurm` now
+take optional `PHYS_BATCH` / `LR` (and the baseline one `RUN_LABEL`) via
+`--export`, defaulting to the frozen values so nothing changes for
+standard runs.
+
+### RESULTS (2026-09-09)
+
+**Gemma-3 non-DP audits** (recovered, job 7196849 — 2.5 h):
+
+| seed | sel ep | AG | MNLI | PII F1 | PII EM | ppl | gap | WBC | ext 1/10/50× |
+|--:|--:|--:|--:|--:|--:|--:|--:|--:|---|
+| 42 | 20 | 0.919 | 0.802 | 0.986 | 0.948 | 1.05 | 4.58 | 0.978 | .47/.96/.98 |
+| 43 |  8 | 0.908 | 0.809 | 0.988 | 0.953 | 1.05 | 2.89 | 0.941 | .01/.89/.97 |
+| 44 | 18 | 0.920 | 0.808 | 0.986 | 0.950 | 1.05 | 4.50 | 0.978 | .41/.96/.98 |
+
+Clean, stable non-DP baseline (ppl 1.05, strong utility) that memorises
+hard — WBC ~0.96–0.98, 89–96 % verbatim extraction at 10×, 97 % at 50×.
+seed-43 selected earlier (ep 8) so its memorisation is a notch lower.
+Gemma-3's full 3-seed matrix is now complete on the OSC frozen pipeline.
+
+**Llama non-DP LR sensitivity** (job 7197016, seed 42):
+
+| LR | sel ep | AG | MNLI | PII F1 | PII EM | ppl | gap | WBC |
+|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| 2e-5 (standard) |  7 | 0.867 | 0.458 | 0.656 | 0.104 | 10.49 | 2.44 | 0.925 |
+| 1e-5 (test)     | 19 | 0.471 | 0.393 | 0.588 | 0.038 |  9.41 | 3.05 | 0.948 |
+
+**LR=1e-5 does NOT improve the Llama non-DP baseline — it is worse.**
+AG News collapses to 0.47, MNLI/PII/EM all down, perplexity only
+marginally better (9.4 vs 10.5, still ~8× the DP runs' 1.24), and it
+memorises *more* (WBC 0.948, gap 3.05). Per the pre-registered decision
+rule: **keep the LR=2e-5 non-DP Llama results, document the instability.**
+The Llama-3.2-1B-Instruct non-DP LoRA baseline is genuinely degenerate on
+this task at both LRs — high perplexity + low held-out PII EM while
+memorising training canaries. Gemma-3 and VaultGemma non-DP baselines are
+stable (ppl 1.05 / 1.10), so this is Llama-specific: DP noise is acting as
+a regulariser this particular base model badly needs. Not an
+under-optimised baseline — an intrinsic non-DP instability. Keep as a
+reported finding, do not retune.
+
+### Gemma-2 pilot — HEALTHY at epoch 14/20 (2026-09-09 ~16:00)
+
+7197017 (non-DP) / 7197018-20 (ε 3/5/8, pb=4): all RUNNING, **no OOM**
+(pb=4 uses only ~6 GB / 15.5 GB — pb 8–16 would have fit; kept 4, no
+harm), losses sane (DP ~0.1–0.8 with noise, non-DP ~0.98), ε accounting
+on target (2.72 / 4.47 / 7.05 at epoch 14). DP throughput ~56 min/epoch →
+each finishes train+select+audit in ~8 h from here; non-DP ~10 h. Well
+inside the 44 h walls.
+
+**Gemma-2 seeds 43/44 (priority 4): HELD** until the seed-42 pilot
+finishes and its *utility* is confirmed sane (not just training-stable) —
+the Llama non-DP instability above is exactly why "healthy" should mean
+the outputs are good, not only that nothing crashed. ~8–10 h out.
+
+### Gemma-2 seed-42 pilot — RESULTS: healthy, best model in the matrix (2026-09-10)
+
+All 4 COMPLETED (non-DP 1d05h, DP ~23h50m each; pb=4 peaked ~6 GB/15.5 GB,
+no OOM). Smooth monotonic U_val curves for all 4 (no noise/instability
+like Llama non-DP) — unambiguously healthy on both training-stability and
+utility grounds.
+
+| cell | sel ep | actual ε | AG | MNLI | PII F1 | PII EM | ppl | gap | WBC | extr 10×/50× |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|---|
+| non-DP | 9 | ∞ | 0.928 | 0.873 | 0.995 | 0.978 | 1.04 | 2.44 | 0.982 | .96/.98 |
+| ε=3 | 20 | 3.00 | 0.873 | 0.789 | 0.958 | 0.851 | 1.13 | 0.069 | 0.490 | 0/0 |
+| ε=5 | 18 | 4.84 | 0.871 | 0.795 | 0.962 | 0.864 | 1.13 | 0.068 | 0.491 | 0/0 |
+| ε=8 | 18 | 7.74 | 0.874 | 0.800 | 0.965 | 0.869 | 1.13 | 0.069 | 0.492 | 0/0 |
+
+Gemma-2-2B's DP MNLI (~0.79–0.80) and PII EM (~0.85–0.87) beat every
+other model in the matrix at comparable ε (Gemma-3 ~0.72 / ~0.70-0.73,
+Llama ~0.58-0.60 / ~0.76-0.80) — the extra capacity (2.6B vs ~1B) is
+paying off with no DP instability, even at pb=4. Non-DP memorises exactly
+like the other stable baselines (WBC 0.98, 96/98% extraction). No
+memorisation under DP at any ε (WBC ~0.49, extraction 0/0/0).
+
+**Verdict: pilot healthy → seeds 43/44 submitted** (8 jobs, same settings,
+pb=4, `--time=44:00:00`): 7240361-67, 7240374. Completes the full 12-run
+Gemma-2 matrix.
+
+### Gemma-2 seeds 43/44 — RESULTS: full 12-run matrix complete (2026-09-12)
+
+All 8 COMPLETED (non-DP ~1d05h, DP ~23-24h each). Every metric agrees
+within ~0.01 across the 3 seeds at a given ε -- tightest cross-seed
+agreement of any model in the project.
+
+| cell | AG | MNLI | PII F1 | PII EM | ppl | gap | WBC | extr 10x/50x |
+|---|--:|--:|--:|--:|--:|--:|--:|---|
+| non-DP (s42/43/44) | .923-.928 | .869-.873 | .993-.996 | .973-.980 | 1.04 | 2.43-2.57 | 0.981-0.982 | .93-.96/.975 |
+| ε=3 (s42/43/44) | .868-.873 | .788-.790 | .957-.958 | .845-.851 | 1.13 | 0.069-0.070 | 0.490-0.497 | 0/0 |
+| ε=5 (s42/43/44) | .870-.875 | .790-.795 | .961-.962 | .862-.864 | 1.13 | 0.068-0.070 | 0.491-0.496 | 0/0 |
+| ε=8 (s42/43/44) | .872-.876 | .793-.800 | .963-.965 | .868-.870 | 1.13 | 0.069-0.071 | 0.492-0.496 | 0/0 |
+
+Full result files: `results/instruction_recall/{checkpoint_selection,privacy_audit}_gemma2_{baseline_nodp,eps3,eps5,eps8}_seed{42,43,44}*.json`.
+
+## PROJECT STATUS: full 3-seed x 4-privacy-level matrix complete, all 4 models
+
+| model | non-DP | ε=3 | ε=5 | ε=8 | seeds |
+|---|:-:|:-:|:-:|:-:|---|
+| VaultGemma | ✅ | ✅ | ✅ | ✅ | 42/43/44 |
+| Gemma-3-1B | ✅ | ✅ | ✅ | ✅ | 42/43/44 |
+| Llama-3.2-1B-Instruct | ✅ | ✅ | ✅ | ✅ | 42/43/44 |
+| Gemma-2-2B | ✅ | ✅ | ✅ | ✅ | 42/43/44 |
+
+**48/48 cells done** on the identical OSC frozen pipeline (seed-42
+processed dataset, EOS-supervised canonical formatter, global batch 128,
+clip 1.0, LoRA r16/α32 on 7 proj modules, LR 2e-5 -- except the documented
+Llama non-DP LR=1e-5 side run, 20-epoch horizon, U_val checkpoint
+selection, full CanaryBench audit). No jobs queued or running as of this
+entry. Side notes carried forward: Gemma-3 s42 ε5 duplicates an LS04
+off-cluster run by design; Llama non-DP is intrinsically unstable at both
+LRs tested (documented, not retuned).

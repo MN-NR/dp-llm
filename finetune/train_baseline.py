@@ -83,6 +83,26 @@ class StepLossCallback(TrainerCallback):
             })
 
 
+class SaveEveryEpochCallback(TrainerCallback):
+    """Persist the LoRA adapter to <output_dir>/epoch_<N>/ at the end of
+    every epoch, mirroring train_dp_ddp.py's --save-every-epoch layout so
+    slurm/select_checkpoint.py can rank all 20 checkpoints by U_val. This
+    is independent of HF Trainer's own step-based rotating checkpoints."""
+
+    def __init__(self, output_dir, tokenizer):
+        self.output_dir = output_dir
+        self.tokenizer = tokenizer
+
+    def on_epoch_end(self, args, state, control, model=None, **kwargs):
+        epoch = int(round(state.epoch or 0))
+        if epoch < 1:
+            return
+        epoch_dir = os.path.join(self.output_dir, f"epoch_{epoch}")
+        os.makedirs(epoch_dir, exist_ok=True)
+        model.save_pretrained(epoch_dir)
+        self.tokenizer.save_pretrained(epoch_dir)
+
+
 class CustomDataCollator:
     """
     Custom data collator that excludes metadata fields (group, task) from tokenization.
@@ -187,7 +207,8 @@ def _load_tokenizer(model_source: str, hf_token: str, source_kwargs: dict):
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-def train_baseline(cfg: TrainingConfig, pilot: bool = False):
+def train_baseline(cfg: TrainingConfig, pilot: bool = False, seed: int = 42,
+                   save_every_epoch: bool = False, run_label_override: str = None):
 
     if pilot:
         cfg.num_epochs    = cfg.pilot_epochs
@@ -196,6 +217,14 @@ def train_baseline(cfg: TrainingConfig, pilot: bool = False):
         cfg.logging_steps = 10
 
     run_label  = "baseline_pilot" if pilot else "baseline"
+    if save_every_epoch and not pilot:
+        # Distinct dir per (seed, horizon) so U_val-selectable epoch_N/
+        # checkpoints never collide, matching the DP runs' run_tag scheme.
+        run_label = f"baseline_seed{seed}_epochs{cfg.num_epochs}"
+    if run_label_override:
+        # Caller fully controls the checkpoint dir name (e.g. an LR
+        # sensitivity run that must not overwrite the standard-LR baseline).
+        run_label = run_label_override
     output_dir = os.path.join(cfg.output_base, cfg.model_key, run_label)
     log_path   = os.path.join(output_dir, "train.log")
     os.makedirs(output_dir, exist_ok=True)
@@ -276,9 +305,16 @@ def train_baseline(cfg: TrainingConfig, pilot: bool = False):
     logger.info(f"Train: {len(train_ds):,}  Val: {len(val_ds):,}")
 
     # ── Training args ─────────────────────────────────────────────────────────
+    # With --save-every-epoch the authoritative checkpoints are the
+    # epoch_N/ adapters written by SaveEveryEpochCallback and selected by
+    # U_val downstream, so HF Trainer's own best-by-eval_loss selection is
+    # turned off (it would otherwise pick a different checkpoint by a
+    # different rule) and its step-based rotating checkpoints are disabled.
     training_args = TrainingArguments(
         output_dir                  = output_dir,
         num_train_epochs            = cfg.num_epochs,
+        seed                        = seed,
+        data_seed                   = seed,
         per_device_train_batch_size = cfg.batch_size,
         per_device_eval_batch_size  = cfg.batch_size,
         gradient_accumulation_steps = cfg.grad_accum,
@@ -286,19 +322,22 @@ def train_baseline(cfg: TrainingConfig, pilot: bool = False):
         warmup_steps                = cfg.warmup_steps,
         eval_strategy               = "steps",
         eval_steps                  = cfg.eval_steps,
-        save_strategy               = "steps",
+        save_strategy               = "no" if save_every_epoch else "steps",
         save_steps                  = cfg.save_steps,
         save_total_limit            = 2,
         logging_steps               = cfg.logging_steps,
         fp16                        = (device.type == "cuda" and not torch.cuda.is_bf16_supported()),
         bf16                        = (device.type == "cuda" and torch.cuda.is_bf16_supported()),
         report_to                   = "none",
-        load_best_model_at_end      = True,
+        load_best_model_at_end      = not save_every_epoch,
         metric_for_best_model       = "eval_loss",
         greater_is_better           = False,
     )
 
     step_callback = StepLossCallback()
+    callbacks = [step_callback]
+    if save_every_epoch:
+        callbacks.append(SaveEveryEpochCallback(output_dir, tokenizer))
 
     # Use custom data collator to handle metadata fields
     data_collator = CustomDataCollator(tokenizer)
@@ -310,7 +349,7 @@ def train_baseline(cfg: TrainingConfig, pilot: bool = False):
         eval_dataset     = val_ds,
         processing_class = tokenizer,
         data_collator    = data_collator,
-        callbacks        = [step_callback],
+        callbacks        = callbacks,
     )
 
     # ── Train ─────────────────────────────────────────────────────────────────
@@ -475,11 +514,24 @@ if __name__ == "__main__":
                         help="Override config's learning_rate")
     parser.add_argument("--epochs", type=int, default=None,
                         help="Override config's num_epochs")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="Random seed (default: 42)")
+    parser.add_argument("--save-every-epoch", action="store_true",
+                        help="Write epoch_N/ adapters for U_val checkpoint selection "
+                             "(disables HF best-by-eval_loss selection)")
+    parser.add_argument("--lora-dropout", type=float, default=None,
+                        help="Override config's lora_dropout (pass 0.0 to match the DP "
+                             "runs' LoRA config exactly)")
+    parser.add_argument("--run-label", type=str, default=None,
+                        help="Override the checkpoint subdir name (e.g. for an LR "
+                             "sensitivity run that must not overwrite the standard baseline)")
     args = parser.parse_args()
 
     cfg = replace(MODELS[args.model])
     if args.hf_token:
         cfg.hf_token = args.hf_token
+    if args.lora_dropout is not None:
+        cfg.lora_dropout = args.lora_dropout
     if args.batch_size:
         cfg.batch_size = args.batch_size
     if args.grad_accum:
@@ -504,4 +556,6 @@ if __name__ == "__main__":
         cfg.results_dir = args.results_dir
 
     require_dataset_paths(cfg)
-    train_baseline(cfg, pilot=args.pilot)
+    train_baseline(cfg, pilot=args.pilot, seed=args.seed,
+                   save_every_epoch=args.save_every_epoch,
+                   run_label_override=args.run_label)
