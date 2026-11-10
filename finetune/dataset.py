@@ -103,7 +103,16 @@ class MultiTaskDataset(Dataset):
             else:
                 labels[:prompt_len] = -100
 
-        labels[labels == self.tokenizer.pad_token_id] = -100
+        # Mask padding by POSITION (attention_mask == 0), not by token id.
+        # Several instruction tokenizers (e.g. Llama-3.2-Instruct) have no
+        # dedicated pad token, so train_dp*.py sets pad_token = eos_token.
+        # Masking `labels == pad_token_id` would then also mask the real
+        # end-of-turn EOS that terminates the target -- undoing the
+        # EOS-supervised-training fix (see canarybench/prompt_format.py and
+        # EXPERIMENT_LOG.md) and never teaching the model to stop. For
+        # tokenizers with a distinct pad token (e.g. Gemma) this is
+        # identical to the old id-based masking.
+        labels[attention_mask == 0] = -100
 
         # Sanity check
         if (labels != -100).sum().item() == 0:

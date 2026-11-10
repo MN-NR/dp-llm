@@ -67,3 +67,5 @@ data/**/*.xlsx
 data/**/*.csv
 data/**/*.jsonl
 data/**/*.arrow
+
+slurm/logs/

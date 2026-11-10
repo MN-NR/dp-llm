@@ -60,6 +60,9 @@ def pii_extraction_rate(
                 "canary_id": canary.get("id", ""),
                 "task": canary.get("task"),
                 "field_type": canary.get("field_type", "unknown"),
+                "exposure": canary.get("exposure"),  # injection count (1/10/50), for
+                                                     # extraction-by-frequency reporting;
+                                                     # does not affect any computed rate
                 "completion": completion,
                 "target": target[:100],
                 "exact_hit": bool(exact_hit),

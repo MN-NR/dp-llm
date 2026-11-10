@@ -61,6 +61,8 @@ class SingleImplementationTests(unittest.TestCase):
             class _StubTokenizer:
                 chat_template = None
                 pad_token_id = 0
+                eos_token = "</s>"          # build_supervised_text appends this (EOS-supervision fix)
+                eos_token_id = 2
 
                 def __call__(self, text, **kwargs):
                     return {"input_ids": list(range(len(text.split())))}
@@ -106,17 +108,19 @@ class PromptAndTargetSpanTests(unittest.TestCase):
     def test_vault_gemma_has_no_chat_template(self):
         """VaultGemma is a base (non-instruction-tuned) model: it has no
         chat_template, so canonical formatting falls back to the same
-        "### Response:" template as the legacy path. This means the
-        canary_eval.py prompt-formatting bugfix is a NO-OP for VaultGemma
-        specifically -- it only changes behavior for chat-template models
-        (Gemma-it, Llama-Instruct)."""
+        "### Response:" PROMPT as the legacy path. The only difference from
+        legacy is the trailing EOS the EOS-supervision fix appends to
+        full_text (legacy predates that fix). The chat-template
+        prompt-formatting bugfix itself is still a NO-OP for VaultGemma --
+        it only changes the prompt for chat-template models."""
         tok = self.tokenizers["vault_gemma"]
         if tok is None:
             self.skipTest("vault_gemma tokenizer not available locally")
         self.assertFalse(tokenizer_uses_chat_template(tok))
-        canonical = build_supervised_text(tok, SAMPLE_RECORD)
-        legacy = legacy_hardcoded_supervised_text(SAMPLE_RECORD)
-        self.assertEqual(canonical, legacy)
+        canon_prompt, canon_full = build_supervised_text(tok, SAMPLE_RECORD)
+        legacy_prompt, legacy_full = legacy_hardcoded_supervised_text(SAMPLE_RECORD)
+        self.assertEqual(canon_prompt, legacy_prompt)
+        self.assertEqual(canon_full, legacy_full + (tok.eos_token or ""))
 
     def test_chat_template_models_diverge_from_legacy_hardcoded(self):
         """For Gemma-it/Llama-Instruct, the legacy hardcoded "### Response:"
@@ -142,7 +146,53 @@ class PromptAndTargetSpanTests(unittest.TestCase):
                     self.skipTest(f"{name} tokenizer not available locally")
                 prompt_only, full_text = build_supervised_text(tok, lm_record)
                 self.assertEqual(prompt_only, "")
-                self.assertEqual(full_text, lm_record["target"])
+                # lm records carry no prompt, but still get a trailing EOS so
+                # the model is trained to stop (the EOS-supervision fix --
+                # see build_supervised_text / EXPERIMENT_LOG.md).
+                self.assertEqual(full_text, lm_record["target"] + (tok.eos_token or ""))
+
+    def test_multitask_dataset_keeps_trailing_eos_supervised(self):
+        """The training path (MultiTaskDataset.__getitem__) must NOT mask the
+        target's terminating EOS from the loss. Regression for Llama-3.2-
+        Instruct: it has no pad token, so train_dp*.py sets pad_token =
+        eos_token; masking labels by `== pad_token_id` then also masked the
+        real end-of-turn EOS, so the DP model was never trained to stop.
+        The fix masks padding by attention_mask == 0 instead.
+        """
+        from finetune.dataset import MultiTaskDataset
+
+        records = [
+            dict(SAMPLE_RECORD, group="C"),
+            {"id": "cls1", "group": "A", "task": "classification",
+             "input": "Instruction: topic?\n\nText: Stocks rose.", "target": " Business"},
+        ]
+        for name, tok in self.tokenizers.items():
+            with self.subTest(model=name):
+                if tok is None:
+                    self.skipTest(f"{name} tokenizer not available locally")
+                if tok.pad_token is None:
+                    tok.pad_token = tok.eos_token  # matches train_dp_ddp.py
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    path = os.path.join(tmpdir, "recs.jsonl")
+                    with open(path, "w") as f:
+                        for r in records:
+                            f.write(json.dumps(r) + "\n")
+                    ds = MultiTaskDataset(path, tok, max_length=256)
+                    self.assertGreater(len(ds), 0)
+                    for i in range(len(ds)):
+                        item = ds[i]
+                        ids = item["input_ids"].tolist()
+                        labels = item["labels"].tolist()
+                        attn = item["attention_mask"].tolist()
+                        real = [j for j, a in enumerate(attn) if a == 1]
+                        last = real[-1]
+                        self.assertEqual(ids[last], tok.eos_token_id,
+                                         f"{name} rec {i}: last real token is not EOS")
+                        self.assertNotEqual(labels[last], -100,
+                                            f"{name} rec {i}: trailing EOS masked from loss")
+                        self.assertTrue(
+                            any(ids[j] == tok.eos_token_id and labels[j] != -100 for j in real),
+                            f"{name} rec {i}: no supervised EOS in target span")
 
 
 if __name__ == "__main__":
